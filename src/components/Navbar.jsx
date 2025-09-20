@@ -13,24 +13,24 @@ const Navbar = () => {
           {t('companyName')}
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <ul className="navbar-nav">
-            <li>
-              <Link 
-                to="/" 
-                className={location.pathname === '/' ? 'active' : ''}
-              >
-                {t('createOrder')}
-              </Link>
-            </li>
-            <li>
-              <Link 
-                to="/orders" 
-                className={location.pathname === '/orders' ? 'active' : ''}
-              >
-                {t('viewOrders')}
-              </Link>
-            </li>
-          </ul>
+              <ul className="navbar-nav">
+                <li>
+                  <Link 
+                    to="/" 
+                    className={location.pathname === '/' || location.pathname === '/orders' ? 'active' : ''}
+                  >
+                    {t('viewOrders')}
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/create" 
+                    className={location.pathname === '/create' ? 'active' : ''}
+                  >
+                    {t('createOrder')}
+                  </Link>
+                </li>
+              </ul>
               <button 
                 className="language-toggle" 
                 onClick={toggleLanguage}

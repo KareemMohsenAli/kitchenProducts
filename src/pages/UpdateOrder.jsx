@@ -188,9 +188,9 @@ const UpdateOrder = () => {
         setIsSubmitting(false);
       }, 1000);
       
-      // Navigate to order view after showing success message
+      // Navigate to orders list after showing success message
       setTimeout(() => {
-        navigate(`/order/${id}`);
+        navigate('/');
       }, 3000);
 
     } catch (error) {
@@ -385,7 +385,7 @@ const UpdateOrder = () => {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => navigate('/orders')}
+            onClick={() => navigate('/')}
           >
             {t('viewAllOrders')}
           </button>

@@ -82,7 +82,7 @@ const OrderView = () => {
       try {
         await db.orders.delete(parseInt(id));
         setMessage({ type: 'success', text: t('orderDeletedSuccessfully') });
-        navigate('/orders');
+        navigate('/');
       } catch (error) {
         console.error('Error deleting order:', error);
         setMessage({ type: 'error', text: t('errorDeletingOrder') });
@@ -117,7 +117,7 @@ const OrderView = () => {
             <button className="btn btn-danger" onClick={deleteOrder}>
               {t('deleteOrder')}
             </button>
-            <button className="btn btn-secondary" onClick={() => navigate('/orders')}>
+            <button className="btn btn-secondary" onClick={() => navigate('/')}>
               {t('backToOrders')}
             </button>
           </div>

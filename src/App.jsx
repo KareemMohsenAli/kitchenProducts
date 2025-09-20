@@ -17,7 +17,8 @@ function App() {
           <Navbar />
           <main className="main-content">
           <Routes>
-            <Route path="/" element={<CreateOrder />} />
+            <Route path="/" element={<OrdersList />} />
+            <Route path="/create" element={<CreateOrder />} />
             <Route path="/orders" element={<OrdersList />} />
             <Route path="/order/:id" element={<OrderView />} />
             <Route path="/update-order/:id" element={<UpdateOrder />} />
