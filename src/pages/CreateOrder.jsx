@@ -13,7 +13,7 @@ const CreateOrder = () => {
       width: '',
       length: '',
       area: 0,
-      quantity: '',
+      quantity: '1',
       category: '',
       pricePerMeter: '',
       total: 0,
@@ -21,6 +21,20 @@ const CreateOrder = () => {
     }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Recalculate totals on initial load
+  useEffect(() => {
+    const newItems = orderItems.map(item => {
+      const area = calculateArea(item.width, item.length);
+      const total = calculateItemTotal(area, item.quantity, item.pricePerMeter);
+      return {
+        ...item,
+        area,
+        total
+      };
+    });
+    setOrderItems(newItems);
+  }, []); // Only run once on mount
 
   // Calculate area automatically
   const calculateArea = (width, length) => {
@@ -56,10 +70,21 @@ const CreateOrder = () => {
       newItems[index].area = area;
     }
 
-    // Auto-calculate total when area, quantity, or price changes
-    if (['area', 'quantity', 'pricePerMeter'].includes(field)) {
+    // Auto-calculate total when width, length, quantity, or price changes
+    if (['width', 'length', 'quantity', 'pricePerMeter'].includes(field)) {
+      // Recalculate area if width or length changed
+      let area = newItems[index].area;
+      if (field === 'width' || field === 'length') {
+        area = calculateArea(
+          field === 'width' ? value : newItems[index].width,
+          field === 'length' ? value : newItems[index].length
+        );
+        newItems[index].area = area;
+      }
+      
+      // Calculate total with current values
       const total = calculateItemTotal(
-        newItems[index].area,
+        area,
         newItems[index].quantity,
         newItems[index].pricePerMeter
       );
@@ -77,7 +102,7 @@ const CreateOrder = () => {
         width: '',
         length: '',
         area: 0,
-        quantity: '',
+        quantity: '1',
         category: '',
         pricePerMeter: '',
         total: 0,
@@ -177,7 +202,7 @@ const CreateOrder = () => {
         width: '',
         length: '',
         area: 0,
-        quantity: '',
+        quantity: '1',
         category: '',
         pricePerMeter: '',
         total: 0,
@@ -276,10 +301,11 @@ const CreateOrder = () => {
                 <label>{t('quantity')} *</label>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
+                  min="1"
                   value={item.quantity}
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                  placeholder="0.00"
+                  placeholder="1"
                   required
                 />
               </div>
