@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import toast from 'react-hot-toast';
 import db from '../database';
 
 const CreateOrder = () => {
@@ -20,7 +21,6 @@ const CreateOrder = () => {
     }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
 
   // Calculate area automatically
   const calculateArea = (width, length) => {
@@ -99,47 +99,72 @@ const CreateOrder = () => {
     e.preventDefault();
     
     if (!userName.trim()) {
-      setMessage({ type: 'error', text: t('pleaseEnterCustomerName') });
+      toast.error(t('pleaseEnterCustomerName'));
       return;
     }
 
     if (orderItems.some(item => !item.width || !item.length || !item.quantity || !item.pricePerMeter)) {
-      setMessage({ type: 'error', text: t('pleaseFillAllRequiredFields') });
+      toast.error(t('pleaseFillAllRequiredFields'));
       return;
     }
 
     setIsSubmitting(true);
-    setMessage('');
+
+    // Retry mechanism for user creation
+    let retryCount = 0;
+    const maxRetries = 3;
 
     try {
-      // Create or find user
-      let user = await db.users.where('name').equals(userName.trim()).first();
-      if (!user) {
-        user = await db.users.add({
-          name: userName.trim(),
-          createdAt: new Date()
-        });
+      // Create or find user with retry mechanism
+      let user = null;
+      while (retryCount < maxRetries && !user) {
+        try {
+          user = await db.users.where('name').equals(userName.trim()).first();
+          if (!user) {
+            const userId = await db.users.add({
+              name: userName.trim(),
+              createdAt: new Date()
+            });
+            user = await db.users.get(userId);
+          }
+          
+          // Validate user was created successfully
+          if (!user || !user.id) {
+            throw new Error('Failed to create or retrieve user');
+          }
+          break; // Success, exit retry loop
+        } catch (userError) {
+          retryCount++;
+          console.warn(`User creation attempt ${retryCount} failed:`, userError);
+          if (retryCount >= maxRetries) {
+            throw new Error('Failed to create user after multiple attempts');
+          }
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
-      // Create order
-      const order = await db.orders.add({
-        userId: user.id,
-        items: orderItems.map(item => ({
-          width: parseFloat(item.width),
-          length: parseFloat(item.length),
-          area: parseFloat(item.area),
-          quantity: parseFloat(item.quantity),
-          category: item.category,
-          pricePerMeter: parseFloat(item.pricePerMeter),
-          total: parseFloat(item.total),
-          notes: item.notes
-        })),
-        totalAmount: calculateGrandTotal(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Create order with transaction to ensure atomicity
+      const order = await db.transaction('rw', [db.orders], async () => {
+        return await db.orders.add({
+          userId: user.id,
+          items: orderItems.map(item => ({
+            width: parseFloat(item.width),
+            length: parseFloat(item.length),
+            area: parseFloat(item.area),
+            quantity: parseFloat(item.quantity),
+            category: item.category,
+            pricePerMeter: parseFloat(item.pricePerMeter),
+            total: parseFloat(item.total),
+            notes: item.notes
+          })),
+          totalAmount: calculateGrandTotal(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
       });
 
-      setMessage({ type: 'success', text: t('orderCreatedSuccessfully') });
+      toast.success(t('orderCreatedSuccessfully'));
       
       // Keep loader for a moment to show success message
       setTimeout(() => {
@@ -166,7 +191,11 @@ const CreateOrder = () => {
 
     } catch (error) {
       console.error('Error creating order:', error);
-      setMessage({ type: 'error', text: t('errorCreatingOrder') });
+      if (error.message.includes('Failed to create user')) {
+        toast.error('Failed to create user. Please try again.');
+      } else {
+        toast.error(t('errorCreatingOrder'));
+      }
       setIsSubmitting(false);
     }
   };
@@ -175,11 +204,6 @@ const CreateOrder = () => {
     <div className="form-container">
       <h1 className="card-title">{t('createNewOrder')}</h1>
       
-      {message && message.type === 'error' && (
-        <div className="error">
-          {message.text}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -349,11 +373,6 @@ const CreateOrder = () => {
           </button>
         </div>
 
-        {message && message.type === 'success' && (
-          <div className="success" style={{ marginTop: '20px' }}>
-            {message.text}
-          </div>
-        )}
       </form>
     </div>
   );

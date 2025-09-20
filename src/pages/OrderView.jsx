@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import db from '../database';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const OrderView = () => {
   const { id } = useParams();
@@ -12,7 +14,10 @@ const OrderView = () => {
   const [order, setOrder] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    isLoading: false
+  });
 
   useEffect(() => {
     loadOrder();
@@ -34,7 +39,7 @@ const OrderView = () => {
       setUser(userData);
     } catch (error) {
       console.error('Error loading order:', error);
-      setMessage({ type: 'error', text: t('errorLoadingOrder') });
+      toast.error(t('errorLoadingOrder'));
     } finally {
       setLoading(false);
     }
@@ -70,23 +75,38 @@ const OrderView = () => {
       }
       
       pdf.save(`eslam-order-${user?.name}-${language}-${new Date().toISOString().split('T')[0]}.pdf`);
-      setMessage({ type: 'success', text: t('invoiceGeneratedSuccessfully') });
+      toast.success(t('invoiceGeneratedSuccessfully'));
     } catch (error) {
       console.error('Error generating PDF:', error);
-      setMessage({ type: 'error', text: t('errorGeneratingInvoice') });
+      toast.error(t('errorGeneratingInvoice'));
     }
   };
 
-  const deleteOrder = async () => {
-    if (window.confirm(t('confirmDeleteOrder'))) {
-      try {
-        await db.orders.delete(parseInt(id));
-        setMessage({ type: 'success', text: t('orderDeletedSuccessfully') });
-        navigate('/');
-      } catch (error) {
-        console.error('Error deleting order:', error);
-        setMessage({ type: 'error', text: t('errorDeletingOrder') });
-      }
+  const showDeleteModal = () => {
+    setDeleteModal({
+      isOpen: true,
+      isLoading: false
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      isLoading: false
+    });
+  };
+
+  const confirmDeleteOrder = async () => {
+    setDeleteModal(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      await db.orders.delete(parseInt(id));
+      toast.success(t('orderDeletedSuccessfully'));
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error(t('errorDeletingOrder'));
+      setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -114,7 +134,7 @@ const OrderView = () => {
             <button className="btn btn-success" onClick={generatePDF}>
               {t('generatePDFInvoice')}
             </button>
-            <button className="btn btn-danger" onClick={deleteOrder}>
+            <button className="btn btn-danger" onClick={showDeleteModal}>
               {t('deleteOrder')}
             </button>
             <button className="btn btn-secondary" onClick={() => navigate('/')}>
@@ -123,11 +143,6 @@ const OrderView = () => {
           </div>
         </div>
 
-        {message && (
-          <div className={message.type === 'error' ? 'error' : 'success'}>
-            {message.text}
-          </div>
-        )}
 
         {/* Invoice Content for PDF */}
         <div 
@@ -276,6 +291,19 @@ const OrderView = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteOrder}
+        orderInfo={order ? {
+          customerName: user ? user.name : `Unknown User (ID: ${order.userId})`,
+          totalAmount: order.totalAmount.toFixed(2),
+          creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
+        } : null}
+        isLoading={deleteModal.isLoading}
+      />
     </div>
   );
 };

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import toast from 'react-hot-toast';
 import db from '../database';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 const OrdersList = () => {
   const { t, language } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    orderId: null,
+    orderInfo: null,
+    isLoading: false
+  });
 
   // Load orders and users
   useEffect(() => {
@@ -22,6 +29,7 @@ const OrdersList = () => {
       const allOrders = await db.orders.orderBy('createdAt').reverse().toArray();
       const allUsers = await db.users.toArray();
       
+      
       const usersMap = {};
       allUsers.forEach(user => {
         usersMap[user.id] = user;
@@ -31,23 +39,54 @@ const OrdersList = () => {
       setUsers(usersMap);
     } catch (error) {
       console.error('Error loading orders:', error);
-      setMessage({ type: 'error', text: t('errorLoadingOrders') });
+      toast.error(t('errorLoadingOrders'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete order
-  const handleDeleteOrder = async (orderId) => {
-    if (window.confirm(t('confirmDeleteOrder'))) {
-      try {
-        await db.orders.delete(orderId);
-        setMessage({ type: 'success', text: t('orderDeletedSuccessfully') });
-        loadOrders();
-      } catch (error) {
-        console.error('Error deleting order:', error);
-        setMessage({ type: 'error', text: t('errorDeletingOrder') });
-      }
+  // Show delete confirmation modal
+  const showDeleteModal = (orderId) => {
+    const order = orders.find(o => o.id === orderId);
+    const user = users[order?.userId];
+    
+    setDeleteModal({
+      isOpen: true,
+      orderId,
+      orderInfo: order ? {
+        customerName: user ? user.name : `Unknown User (ID: ${order.userId})`,
+        totalAmount: order.totalAmount.toFixed(2),
+        creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
+      } : null,
+      isLoading: false
+    });
+  };
+
+  // Close delete modal
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      orderId: null,
+      orderInfo: null,
+      isLoading: false
+    });
+  };
+
+  // Confirm delete order
+  const confirmDeleteOrder = async () => {
+    if (!deleteModal.orderId) return;
+
+    setDeleteModal(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      await db.orders.delete(deleteModal.orderId);
+      toast.success(t('orderDeletedSuccessfully'));
+      loadOrders();
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error(t('errorDeletingOrder'));
+      setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -71,10 +110,10 @@ const OrdersList = () => {
       link.download = `eslam-aluminum-orders-backup-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       
-      setMessage({ type: 'success', text: t('dataExportedSuccessfully') });
+      toast.success(t('dataExportedSuccessfully'));
     } catch (error) {
       console.error('Error exporting data:', error);
-      setMessage({ type: 'error', text: t('errorExportingData') });
+      toast.error(t('errorExportingData'));
     }
   };
 
@@ -97,25 +136,28 @@ const OrdersList = () => {
           await db.users.bulkAdd(data.users);
           await db.orders.bulkAdd(data.orders);
           
-          setMessage({ type: 'success', text: t('dataImportedSuccessfully') });
+          toast.success(t('dataImportedSuccessfully'));
           loadOrders();
         } else {
-          setMessage({ type: 'error', text: t('invalidFile') });
+          toast.error(t('invalidFile'));
         }
       } catch (error) {
         console.error('Error importing data:', error);
-        setMessage({ type: 'error', text: t('errorImportingData') });
+        toast.error(t('errorImportingData'));
       }
     };
     reader.readAsText(file);
   };
 
+
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
     const user = users[order.userId];
-    if (!user) return false;
     
-    return user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // If no user found, show the order with a fallback name
+    const userName = user ? user.name : `Unknown User (ID: ${order.userId})`;
+    
+    return userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
            order.totalAmount.toString().includes(searchTerm) ||
            order.items.some(item => 
              item.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -133,11 +175,6 @@ const OrdersList = () => {
           <h1 className="card-title">{t('allOrders')}</h1>
         </div>
 
-        {message && (
-          <div className={message.type === 'error' ? 'error' : 'success'}>
-            {message.text}
-          </div>
-        )}
 
         {/* Search and Export Controls */}
         <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -167,6 +204,7 @@ const OrdersList = () => {
               style={{ display: 'none' }}
             />
           </label>
+          
         </div>
 
         {/* Orders Table */}
@@ -191,7 +229,7 @@ const OrdersList = () => {
                   const user = users[order.userId];
                   return (
                     <tr key={order.id}>
-                      <td>{user ? user.name : t('other')}</td>
+                      <td>{user ? user.name : `Unknown User (ID: ${order.userId})`}</td>
                       <td>{order.items.length}</td>
                       <td>{order.totalAmount.toFixed(2)} {t('currency')}</td>
                       <td>{new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</td>
@@ -211,7 +249,7 @@ const OrdersList = () => {
                           </Link>
                           <button
                             className="btn btn-danger"
-                            onClick={() => handleDeleteOrder(order.id)}
+                            onClick={() => showDeleteModal(order.id)}
                           >
                             {t('delete')}
                           </button>
@@ -234,6 +272,15 @@ const OrdersList = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteOrder}
+        orderInfo={deleteModal.orderInfo}
+        isLoading={deleteModal.isLoading}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import toast from 'react-hot-toast';
 import db from '../database';
 
 const UpdateOrder = () => {
@@ -21,7 +22,6 @@ const UpdateOrder = () => {
     }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   // Load order data
@@ -35,14 +35,14 @@ const UpdateOrder = () => {
       const order = await db.orders.get(parseInt(id));
       
       if (!order) {
-        setMessage({ type: 'error', text: t('orderNotFound2') });
+        toast.error(t('orderNotFound2'));
         return;
       }
 
       const user = await db.users.get(order.userId);
       
       if (!user) {
-        setMessage({ type: 'error', text: t('orderNotFound2') });
+        toast.error(t('orderNotFound2'));
         return;
       }
 
@@ -59,7 +59,7 @@ const UpdateOrder = () => {
       })));
     } catch (error) {
       console.error('Error loading order:', error);
-      setMessage({ type: 'error', text: t('errorLoadingOrder') });
+      toast.error(t('errorLoadingOrder'));
     } finally {
       setLoading(false);
     }
@@ -142,26 +142,31 @@ const UpdateOrder = () => {
     e.preventDefault();
     
     if (!userName.trim()) {
-      setMessage({ type: 'error', text: t('pleaseEnterCustomerName') });
+      toast.error(t('pleaseEnterCustomerName'));
       return;
     }
 
     if (orderItems.some(item => !item.width || !item.length || !item.quantity || !item.pricePerMeter)) {
-      setMessage({ type: 'error', text: t('pleaseFillAllRequiredFields') });
+      toast.error(t('pleaseFillAllRequiredFields'));
       return;
     }
 
     setIsSubmitting(true);
-    setMessage('');
 
     try {
       // Get or create user
       let user = await db.users.where('name').equals(userName.trim()).first();
       if (!user) {
-        user = await db.users.add({
+        const userId = await db.users.add({
           name: userName.trim(),
           createdAt: new Date()
         });
+        user = await db.users.get(userId);
+      }
+
+      // Validate user was created successfully
+      if (!user || !user.id) {
+        throw new Error('Failed to create or retrieve user');
       }
 
       // Update order
@@ -181,7 +186,7 @@ const UpdateOrder = () => {
         updatedAt: new Date()
       });
 
-      setMessage({ type: 'success', text: t('orderUpdatedSuccessfully') });
+      toast.success(t('orderUpdatedSuccessfully'));
       
       // Keep loader for a moment to show success message
       setTimeout(() => {
@@ -195,7 +200,11 @@ const UpdateOrder = () => {
 
     } catch (error) {
       console.error('Error updating order:', error);
-      setMessage({ type: 'error', text: t('errorUpdatingOrder') });
+      if (error.message === 'Failed to create or retrieve user') {
+        toast.error('Failed to create user. Please try again.');
+      } else {
+        toast.error(t('errorUpdatingOrder'));
+      }
       setIsSubmitting(false);
     }
   };
@@ -208,11 +217,6 @@ const UpdateOrder = () => {
     <div className="form-container">
       <h1 className="card-title">{t('updateOrder')}</h1>
       
-      {message && message.type === 'error' && (
-        <div className="error">
-          {message.text}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -391,11 +395,6 @@ const UpdateOrder = () => {
           </button>
         </div>
 
-        {message && message.type === 'success' && (
-          <div className="success" style={{ marginTop: '20px' }}>
-            {message.text}
-          </div>
-        )}
       </form>
     </div>
   );
