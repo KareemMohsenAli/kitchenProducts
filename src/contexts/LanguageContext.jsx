@@ -16,6 +16,7 @@ const translations = {
     companyName: 'إسلام للألوميتال',
     createOrder: 'إنشاء طلب جديد',
     viewOrders: 'عرض جميع الطلبات',
+    statistics: 'الإحصائيات',
     
     // Create Order Page
     createNewOrder: 'إنشاء طلب جديد',
@@ -114,13 +115,48 @@ const translations = {
     invoiceGeneratedSuccessfully: 'تم إنشاء الفاتورة بنجاح',
     errorGeneratingInvoice: 'حدث خطأ أثناء إنشاء الفاتورة',
     errorLoadingOrder: 'حدث خطأ أثناء تحميل الطلب',
-    orderNotFound2: 'الطلب غير موجود'
+    orderNotFound2: 'الطلب غير موجود',
+    
+    // Statistics Page
+    refresh: 'تحديث',
+    totalCustomers: 'إجمالي العملاء',
+    totalRevenue: 'إجمالي الإيرادات',
+    averageOrderValue: 'متوسط قيمة الطلب',
+    storageInformation: 'معلومات التخزين',
+    estimatedDataSize: 'حجم البيانات المقدر',
+    browserStorageUsed: 'مساحة التخزين المستخدمة',
+    browserStorageAvailable: 'مساحة التخزين المتاحة',
+    usagePercentage: 'نسبة الاستخدام',
+    storageDetails: 'تفاصيل التخزين',
+    storageLocation: 'موقع التخزين',
+    browserIndexedDB: 'متصفح (IndexedDB)',
+    browserLimit: 'حد المتصفح',
+    chromeLimit: '~80% من مساحة القرص المتاحة',
+    firefoxLimit: '~50% من مساحة القرص المتاحة',
+    safariLimit: '~1GB (iOS) / ~5GB (macOS)',
+    edgeLimit: '~80% من مساحة القرص المتاحة',
+    variesByBrowser: 'يختلف حسب المتصفح',
+    dataPersistence: 'استمرارية البيانات',
+    localToEachDevice: 'محلي لكل جهاز',
+    backupMethod: 'طريقة النسخ الاحتياطي',
+    useExportImportFeature: 'استخدم ميزة التصدير/الاستيراد',
+    ordersByCategory: 'الطلبات حسب الفئة',
+    ordersByMonth: 'الطلبات حسب الشهر',
+    topCustomers: 'أفضل العملاء',
+    orders: 'طلبات',
+    uncategorized: 'غير مصنف',
+    importantNotes: 'ملاحظات مهمة',
+    dataStoredLocally: 'البيانات مخزنة محلياً في متصفحك فقط',
+    clearingBrowserDataWarning: 'مسح بيانات المتصفح سيحذف جميع الطلبات',
+    dataDoesNotSync: 'البيانات لا تزامن بين الأجهزة',
+    regularExportsRecommended: 'يُنصح بالتصدير المنتظم للنسخ الاحتياطي'
   },
   en: {
     // Navigation
     companyName: 'Eslam for Aluminum',
     createOrder: 'Create New Order',
     viewOrders: 'View All Orders',
+    statistics: 'Statistics',
     
     // Create Order Page
     createNewOrder: 'Create New Order',
@@ -219,7 +255,41 @@ const translations = {
     invoiceGeneratedSuccessfully: 'Invoice generated successfully',
     errorGeneratingInvoice: 'Error generating invoice',
     errorLoadingOrder: 'Error loading order',
-    orderNotFound2: 'Order not found'
+    orderNotFound2: 'Order not found',
+    
+    // Statistics Page
+    refresh: 'Refresh',
+    totalCustomers: 'Total Customers',
+    totalRevenue: 'Total Revenue',
+    averageOrderValue: 'Average Order Value',
+    storageInformation: 'Storage Information',
+    estimatedDataSize: 'Estimated Data Size',
+    browserStorageUsed: 'Browser Storage Used',
+    browserStorageAvailable: 'Browser Storage Available',
+    usagePercentage: 'Usage Percentage',
+    storageDetails: 'Storage Details',
+    storageLocation: 'Storage Location',
+    browserIndexedDB: 'Browser (IndexedDB)',
+    browserLimit: 'Browser Limit',
+    chromeLimit: '~80% of available disk space',
+    firefoxLimit: '~50% of available disk space',
+    safariLimit: '~1GB (iOS) / ~5GB (macOS)',
+    edgeLimit: '~80% of available disk space',
+    variesByBrowser: 'Varies by browser',
+    dataPersistence: 'Data Persistence',
+    localToEachDevice: 'Local to each device',
+    backupMethod: 'Backup Method',
+    useExportImportFeature: 'Use Export/Import feature',
+    ordersByCategory: 'Orders by Category',
+    ordersByMonth: 'Orders by Month',
+    topCustomers: 'Top Customers',
+    orders: 'orders',
+    uncategorized: 'Uncategorized',
+    importantNotes: 'Important Notes',
+    dataStoredLocally: 'Data is stored locally in your browser only',
+    clearingBrowserDataWarning: 'Clearing browser data will delete all orders',
+    dataDoesNotSync: 'Data doesn\'t sync between devices',
+    regularExportsRecommended: 'Regular exports are recommended for backup'
   }
 };
 

@@ -7,6 +7,7 @@ import CreateOrder from './pages/CreateOrder';
 import OrdersList from './pages/OrdersList';
 import OrderView from './pages/OrderView';
 import UpdateOrder from './pages/UpdateOrder';
+import Statistics from './pages/Statistics';
 import './App.css';
 import './animations.css';
 
@@ -23,6 +24,7 @@ function App() {
             <Route path="/orders" element={<OrdersList />} />
             <Route path="/order/:id" element={<OrderView />} />
             <Route path="/update-order/:id" element={<UpdateOrder />} />
+            <Route path="/statistics" element={<Statistics />} />
           </Routes>
           </main>
           <Toaster
