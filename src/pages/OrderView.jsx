@@ -7,6 +7,7 @@ import html2canvas from 'html2canvas';
 import db from '../database';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import InvoiceSelectionModal from '../components/InvoiceSelectionModal';
+import '../components/InvoiceTable.css';
 
 const OrderView = () => {
   const { id } = useParams();
@@ -251,7 +252,8 @@ const OrderView = () => {
 
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('orderDetails3')}</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+            <div className="table-responsive">
+              <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8f9fa' }}>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('width')}</th>
@@ -261,7 +263,6 @@ const OrderView = () => {
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('category')}</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('pricePerMeter')}</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('total')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('notes')}</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('status')}</th>
                 </tr>
               </thead>
@@ -290,15 +291,13 @@ const OrderView = () => {
                       {item.total.toFixed(2)} {t('currency')}
                     </td>
                     <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.notes || '-'}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
                       {t(item.status)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>

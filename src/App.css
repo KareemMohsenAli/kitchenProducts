@@ -638,6 +638,31 @@ body {
   padding-left: 20px;
 }
 
+/* RTL Support for storage warning */
+[dir="rtl"] .storage-info ul,
+[dir="rtl"] .storage-warning ul {
+  padding-left: 0;
+  padding-right: 20px;
+}
+
+[dir="rtl"] .storage-info li,
+[dir="rtl"] .storage-warning li {
+  text-align: right;
+}
+
+/* RTL Support for statistics page */
+[dir="rtl"] .statistics-page {
+  text-align: right;
+}
+
+[dir="rtl"] .stat-label {
+  text-align: right;
+}
+
+[dir="rtl"] .stat-value {
+  text-align: left;
+}
+
 .storage-info li,
 .storage-warning li {
   margin-bottom: 5px;

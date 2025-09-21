@@ -3,7 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import db from '../database';
 
 const Statistics = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [stats, setStats] = useState({
     ordersCount: 0,
     usersCount: 0,
@@ -136,7 +136,7 @@ const Statistics = () => {
   };
 
   return (
-    <div className="statistics-page">
+    <div className="statistics-page" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="card">
         <div className="card-header">
           <h1 className="card-title">{t('statistics')}</h1>
