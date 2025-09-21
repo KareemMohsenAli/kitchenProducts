@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, orderInfo, isLoading }) => {
+const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, orderInfo, isLoading, isUserDelete = false }) => {
   const { t } = useLanguage();
 
   if (!isOpen) return null;
@@ -12,7 +12,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, orderInfo, isLoading }
         <div className="modal-header">
           <h3 className="modal-title">
             <span className="warning-icon">⚠️</span>
-            {t('confirmDeleteOrder')}
+            {isUserDelete ? t('confirmDeleteUser') : t('confirmDeleteOrder')}
           </h3>
           <button className="modal-close" onClick={onClose}>
             ×
@@ -21,11 +21,11 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, orderInfo, isLoading }
         
         <div className="modal-body">
           <div className="warning-message">
-            <p>{t('confirmDeleteOrder')}</p>
+            <p>{isUserDelete ? t('confirmDeleteUser') : t('confirmDeleteOrder')}</p>
             {orderInfo && (
               <div className="order-info">
-                <p><strong>{t('customer')}:</strong> {orderInfo.customerName}</p>
-                <p><strong>{t('totalAmount')}:</strong> {orderInfo.totalAmount} {t('currency')}</p>
+                <p><strong>{isUserDelete ? t('name') : t('customer')}:</strong> {orderInfo.customerName}</p>
+                <p><strong>{isUserDelete ? t('userOrdersCount') : t('totalAmount')}:</strong> {orderInfo.totalAmount} {!isUserDelete && t('currency')}</p>
                 <p><strong>{t('creationDate')}:</strong> {orderInfo.creationDate}</p>
               </div>
             )}
@@ -56,7 +56,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, orderInfo, isLoading }
             ) : (
               <>
                 <span className="delete-icon">🗑️</span>
-                {t('delete')}
+                {isUserDelete ? t('deleteUser') : t('delete')}
               </>
             )}
           </button>

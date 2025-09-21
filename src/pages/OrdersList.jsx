@@ -56,7 +56,7 @@ const OrdersList = () => {
       orderInfo: order ? {
         customerName: user ? user.name : `Unknown User (ID: ${order.userId})`,
         totalAmount: order.totalAmount.toFixed(2),
-        creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
+        creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')
       } : null,
       isLoading: false
     });

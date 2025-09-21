@@ -17,7 +17,8 @@ const CreateOrder = () => {
       category: '',
       pricePerMeter: '',
       total: 0,
-      notes: ''
+      notes: '',
+      status: 'working'
     }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -181,7 +182,8 @@ const CreateOrder = () => {
             category: item.category,
             pricePerMeter: parseFloat(item.pricePerMeter),
             total: parseFloat(item.total),
-            notes: item.notes
+            notes: item.notes,
+            status: item.status || 'working'
           })),
           totalAmount: calculateGrandTotal(),
           createdAt: new Date(),
@@ -206,7 +208,8 @@ const CreateOrder = () => {
         category: '',
         pricePerMeter: '',
         total: 0,
-        notes: ''
+        notes: '',
+        status: 'working'
       }]);
 
       // Navigate to orders list after showing success message

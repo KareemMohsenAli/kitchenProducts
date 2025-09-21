@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import db from '../database';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import InvoiceSelectionModal from '../components/InvoiceSelectionModal';
 
 const OrderView = () => {
   const { id } = useParams();
@@ -14,10 +15,12 @@ const OrderView = () => {
   const [order, setOrder] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedItems, setSelectedItems] = useState(new Set());
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     isLoading: false
   });
+  const [invoiceModal, setInvoiceModal] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -37,6 +40,10 @@ const OrderView = () => {
       
       setOrder(orderData);
       setUser(userData);
+      
+      // Initialize all items as selected by default
+      const allItemIndices = new Set(orderData.items.map((_, index) => index));
+      setSelectedItems(allItemIndices);
     } catch (error) {
       console.error('Error loading order:', error);
       toast.error(t('errorLoadingOrder'));
@@ -45,7 +52,76 @@ const OrderView = () => {
     }
   };
 
+  // Toggle item status
+  const toggleItemStatus = async (itemIndex) => {
+    if (!order) return;
+    
+    try {
+      const updatedItems = [...order.items];
+      updatedItems[itemIndex].status = updatedItems[itemIndex].status === 'working' ? 'done' : 'working';
+      
+      await db.orders.update(parseInt(id), {
+        items: updatedItems,
+        updatedAt: new Date()
+      });
+      
+      setOrder({ ...order, items: updatedItems });
+      toast.success(t('orderUpdatedSuccessfully'));
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      toast.error(t('errorUpdatingOrder'));
+    }
+  };
+
+  // Toggle item selection
+  const toggleItemSelection = (itemIndex) => {
+    const newSelectedItems = new Set(selectedItems);
+    if (newSelectedItems.has(itemIndex)) {
+      newSelectedItems.delete(itemIndex);
+    } else {
+      newSelectedItems.add(itemIndex);
+    }
+    setSelectedItems(newSelectedItems);
+  };
+
+  // Select all items
+  const selectAllItems = () => {
+    const allItemIndices = new Set(order.items.map((_, index) => index));
+    setSelectedItems(allItemIndices);
+  };
+
+  // Deselect all items
+  const deselectAllItems = () => {
+    setSelectedItems(new Set());
+  };
+
+  // Handle status change from invoice modal
+  const handleStatusChange = async (itemIndex) => {
+    if (!order) return;
+    
+    try {
+      const updatedItems = [...order.items];
+      updatedItems[itemIndex].status = updatedItems[itemIndex].status === 'working' ? 'done' : 'working';
+      
+      await db.orders.update(parseInt(id), {
+        items: updatedItems,
+        updatedAt: new Date()
+      });
+      
+      setOrder({ ...order, items: updatedItems });
+      toast.success(t('orderUpdatedSuccessfully'));
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      toast.error(t('errorUpdatingOrder'));
+    }
+  };
+
   const generatePDF = async () => {
+    if (selectedItems.size === 0) {
+      toast.error(t('selectItemsForInvoice'));
+      return;
+    }
+
     try {
       const element = document.getElementById('invoice-content');
       const canvas = await html2canvas(element, {
@@ -74,7 +150,13 @@ const OrderView = () => {
         heightLeft -= pageHeight;
       }
       
-      pdf.save(`eslam-order-${user?.name}-${language}-${new Date().toISOString().split('T')[0]}.pdf`);
+      const selectedCount = selectedItems.size;
+      const totalCount = order.items.length;
+      const filename = selectedCount === totalCount 
+        ? `eslam-order-${user?.name}-${language}-${new Date().toISOString().split('T')[0]}.pdf`
+        : `eslam-order-${user?.name}-selected-${selectedCount}-${language}-${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      pdf.save(filename);
       toast.success(t('invoiceGeneratedSuccessfully'));
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -131,7 +213,7 @@ const OrderView = () => {
         <div className="card-header">
           <h1 className="card-title">{t('orderDetails2')}</h1>
           <div className="action-buttons">
-            <button className="btn btn-success" onClick={generatePDF}>
+            <button className="btn btn-success" onClick={() => setInvoiceModal(true)}>
               {t('generatePDFInvoice')}
             </button>
             <button className="btn btn-danger" onClick={showDeleteModal}>
@@ -157,14 +239,14 @@ const OrderView = () => {
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ color: '#007bff', marginBottom: '10px' }}>{t('companyName')}</h1>
             <h2>{t('invoice')}</h2>
-            <p>{t('orderDate')}: {new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+            <p>{t('orderDate')}: {new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
           </div>
 
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('customerData')}</h3>
             <p><strong>{t('name')}:</strong> {user.name}</p>
             <p><strong>{t('orderNumber')}:</strong> #{order.id}</p>
-            <p><strong>{t('creationDate2')}:</strong> {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+            <p><strong>{t('creationDate2')}:</strong> {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
           </div>
 
           <div style={{ marginBottom: '30px' }}>
@@ -180,10 +262,11 @@ const OrderView = () => {
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('pricePerMeter')}</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('total')}</th>
                   <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('notes')}</th>
+                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('status')}</th>
                 </tr>
               </thead>
               <tbody>
-                {order.items.map((item, index) => (
+                {order.items.filter((_, index) => selectedItems.has(index)).map((item, index) => (
                   <tr key={index}>
                     <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
                       {item.width} {t('meter')}
@@ -209,6 +292,9 @@ const OrderView = () => {
                     <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
                       {item.notes || '-'}
                     </td>
+                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
+                      {t(item.status)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -217,10 +303,10 @@ const OrderView = () => {
 
           <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
             <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-              {t('grandTotal2')}: {order.totalAmount.toFixed(2)} {t('currency')}
+              {t('grandTotal2')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
             </h2>
-            <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {order.items.length}</p>
-            <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+            <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {selectedItems.size}</p>
+            <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#666' }}>
@@ -229,68 +315,18 @@ const OrderView = () => {
           </div>
         </div>
 
-        {/* Regular View (not for PDF) */}
-        <div style={{ marginTop: '30px' }}>
-          <div className="card">
-            <h3>{t('customerData')}</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label>{t('name')}</label>
-                <input type="text" value={user.name} readOnly style={{ backgroundColor: '#f8f9fa' }} />
-              </div>
-              <div className="form-group">
-                <label>{t('orderNumber')}</label>
-                <input type="text" value={`#${order.id}`} readOnly style={{ backgroundColor: '#f8f9fa' }} />
-              </div>
-              <div className="form-group">
-                <label>{t('creationDate2')}</label>
-                <input type="text" value={new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')} readOnly style={{ backgroundColor: '#f8f9fa' }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <h3>{t('orderDetails3')}</h3>
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>{t('width')}</th>
-                    <th>{t('length')}</th>
-                    <th>{t('area')}</th>
-                    <th>{t('quantity')}</th>
-                    <th>{t('category')}</th>
-                    <th>{t('pricePerMeter')}</th>
-                    <th>{t('total')}</th>
-                    <th>{t('notes')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.width} {t('meter')}</td>
-                      <td>{item.length} {t('meter')}</td>
-                      <td>{item.area.toFixed(2)} {t('squareMeter')}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.category || '-'}</td>
-                      <td>{item.pricePerMeter.toFixed(2)} {t('currency')}</td>
-                      <td style={{ fontWeight: 'bold' }}>{item.total.toFixed(2)} {t('currency')}</td>
-                      <td>{item.notes || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="card" style={{ backgroundColor: '#f8f9fa' }}>
-            <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-              {t('grandTotal2')}: {order.totalAmount.toFixed(2)} {t('currency')}
-            </h2>
-            <p>{t('numberOfItems2')}: {order.items.length}</p>
-          </div>
-        </div>
       </div>
+
+      {/* Invoice Selection Modal */}
+      <InvoiceSelectionModal
+        isOpen={invoiceModal}
+        onClose={() => setInvoiceModal(false)}
+        onConfirm={generatePDF}
+        orderItems={order?.items || []}
+        selectedItems={selectedItems}
+        setSelectedItems={setSelectedItems}
+        onStatusChange={handleStatusChange}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
@@ -300,7 +336,7 @@ const OrderView = () => {
         orderInfo={order ? {
           customerName: user ? user.name : `Unknown User (ID: ${order.userId})`,
           totalAmount: order.totalAmount.toFixed(2),
-          creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')
+          creationDate: new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')
         } : null}
         isLoading={deleteModal.isLoading}
       />

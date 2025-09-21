@@ -18,7 +18,8 @@ const UpdateOrder = () => {
       category: '',
       pricePerMeter: '',
       total: 0,
-      notes: ''
+      notes: '',
+      status: 'working'
     }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +57,8 @@ const UpdateOrder = () => {
         category: item.category,
         pricePerMeter: item.pricePerMeter.toString(),
         total: item.total,
-        notes: item.notes || ''
+        notes: item.notes || '',
+        status: item.status || 'working'
       })));
     } catch (error) {
       console.error('Error loading order:', error);
@@ -136,7 +138,8 @@ const UpdateOrder = () => {
         category: '',
         pricePerMeter: '',
         total: 0,
-        notes: ''
+        notes: '',
+        status: 'working'
       }
     ]);
   };
@@ -147,6 +150,13 @@ const UpdateOrder = () => {
       const newItems = orderItems.filter((_, i) => i !== index);
       setOrderItems(newItems);
     }
+  };
+
+  // Toggle item status
+  const toggleItemStatus = (index) => {
+    const newItems = [...orderItems];
+    newItems[index].status = newItems[index].status === 'working' ? 'done' : 'working';
+    setOrderItems(newItems);
   };
 
   // Handle form submission
@@ -192,7 +202,8 @@ const UpdateOrder = () => {
           category: item.category,
           pricePerMeter: parseFloat(item.pricePerMeter),
           total: parseFloat(item.total),
-          notes: item.notes
+          notes: item.notes,
+          status: item.status || 'working'
         })),
         totalAmount: calculateGrandTotal(),
         updatedAt: new Date()
@@ -357,6 +368,33 @@ const UpdateOrder = () => {
                 placeholder={t('anyAdditionalNotes')}
                 rows="3"
               />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>{t('status')}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ 
+                    padding: '6px 12px', 
+                    borderRadius: '4px', 
+                    fontSize: '14px',
+                    backgroundColor: item.status === 'done' ? '#d4edda' : '#fff3cd',
+                    color: item.status === 'done' ? '#155724' : '#856404',
+                    border: '1px solid',
+                    borderColor: item.status === 'done' ? '#c3e6cb' : '#ffeaa7'
+                  }}>
+                    {t(item.status)}
+                  </span>
+                  <button 
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={() => toggleItemStatus(index)}
+                    style={{ fontSize: '12px', padding: '4px 8px' }}
+                  >
+                    {t('toggleStatus')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ))}

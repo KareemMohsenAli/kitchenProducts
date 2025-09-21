@@ -62,6 +62,14 @@ const Navbar = () => {
                 {t('statistics')}
               </Link>
             </li>
+            <li>
+              <Link 
+                to="/users" 
+                className={location.pathname === '/users' ? 'active' : ''}
+              >
+                {t('manageUsers')}
+              </Link>
+            </li>
           </ul>
           <button 
             className="language-toggle" 
@@ -99,6 +107,15 @@ const Navbar = () => {
                 onClick={closeMobileMenu}
               >
                 {t('statistics')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/users" 
+                className={location.pathname === '/users' ? 'active' : ''}
+                onClick={closeMobileMenu}
+              >
+                {t('manageUsers')}
               </Link>
             </li>
           </ul>

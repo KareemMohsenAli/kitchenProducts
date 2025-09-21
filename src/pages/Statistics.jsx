@@ -112,7 +112,12 @@ const Statistics = () => {
   };
 
   const formatCurrency = (amount) => {
-    return amount.toFixed(2) + ' ' + t('currency');
+    // Format large numbers with commas
+    const formattedAmount = amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    return formattedAmount + ' ' + t('currency');
   };
 
   const getStorageColor = (percentage) => {
@@ -164,7 +169,7 @@ const Statistics = () => {
           <div className="stat-card">
             <div className="stat-icon">💰</div>
             <div className="stat-content">
-              <h3>{formatCurrency(stats.totalAmount)}</h3>
+              <h3 style={{ fontSize: '1.2rem', wordBreak: 'break-word' }}>{formatCurrency(stats.totalAmount)}</h3>
               <p>{t('totalRevenue')}</p>
             </div>
           </div>
@@ -172,7 +177,7 @@ const Statistics = () => {
           <div className="stat-card">
             <div className="stat-icon">📈</div>
             <div className="stat-content">
-              <h3>{formatCurrency(stats.averageOrderValue)}</h3>
+              <h3 style={{ fontSize: '1.2rem', wordBreak: 'break-word' }}>{formatCurrency(stats.averageOrderValue)}</h3>
               <p>{t('averageOrderValue')}</p>
             </div>
           </div>
