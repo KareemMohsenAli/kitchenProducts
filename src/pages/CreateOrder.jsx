@@ -17,7 +17,7 @@ const CreateOrder = () => {
       category: '',
       pricePerMeter: '',
       total: 0,
-      notes: '',
+      description: '',
       status: 'working'
     }
   ]);
@@ -107,7 +107,7 @@ const CreateOrder = () => {
         category: '',
         pricePerMeter: '',
         total: 0,
-        notes: ''
+        description: ''
       }
     ]);
   };
@@ -182,7 +182,7 @@ const CreateOrder = () => {
             category: item.category,
             pricePerMeter: parseFloat(item.pricePerMeter),
             total: parseFloat(item.total),
-            notes: item.notes,
+            description: item.description,
             status: item.status || 'working'
           })),
           totalAmount: calculateGrandTotal(),
@@ -208,7 +208,7 @@ const CreateOrder = () => {
         category: '',
         pricePerMeter: '',
         total: 0,
-        notes: '',
+        description: '',
         status: 'working'
       }]);
 
@@ -262,6 +262,16 @@ const CreateOrder = () => {
                   {t('deleteItem')}
                 </button>
               )}
+            </div>
+
+            <div className="form-group">
+              <label>{t('description')}</label>
+              <textarea
+                value={item.description}
+                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                placeholder={t('anyAdditionalNotes')}
+                rows="3"
+              />
             </div>
 
             <div className="form-row">
@@ -352,15 +362,6 @@ const CreateOrder = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>{t('notes')}</label>
-              <textarea
-                value={item.notes}
-                onChange={(e) => handleItemChange(index, 'notes', e.target.value)}
-                placeholder={t('anyAdditionalNotes')}
-                rows="3"
-              />
-            </div>
           </div>
         ))}
 

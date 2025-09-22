@@ -13,19 +13,31 @@ const OrderView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  
+  // State management
   const [order, setOrder] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState(new Set());
-  const [deleteModal, setDeleteModal] = useState({
-    isOpen: false,
-    isLoading: false
-  });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, isLoading: false });
   const [invoiceModal, setInvoiceModal] = useState(false);
 
+  // Load order data
   useEffect(() => {
     loadOrder();
   }, [id]);
+
+  // Handle body scroll when modal opens/closes
+  useEffect(() => {
+    if (invoiceModal) {
+      document.body.style.overflowX = 'hidden';
+    } else {
+      document.body.style.overflowX = 'auto';
+    }
+    return () => {
+      document.body.style.overflowX = 'auto';
+    };
+  }, [invoiceModal]);
 
   const loadOrder = async () => {
     try {
@@ -33,7 +45,7 @@ const OrderView = () => {
       const orderData = await db.orders.get(parseInt(id));
       
       if (!orderData) {
-        setMessage({ type: 'error', text: t('orderNotFound2') });
+        toast.error(t('orderNotFound2'));
         return;
       }
 
@@ -74,28 +86,6 @@ const OrderView = () => {
     }
   };
 
-  // Toggle item selection
-  const toggleItemSelection = (itemIndex) => {
-    const newSelectedItems = new Set(selectedItems);
-    if (newSelectedItems.has(itemIndex)) {
-      newSelectedItems.delete(itemIndex);
-    } else {
-      newSelectedItems.add(itemIndex);
-    }
-    setSelectedItems(newSelectedItems);
-  };
-
-  // Select all items
-  const selectAllItems = () => {
-    const allItemIndices = new Set(order.items.map((_, index) => index));
-    setSelectedItems(allItemIndices);
-  };
-
-  // Deselect all items
-  const deselectAllItems = () => {
-    setSelectedItems(new Set());
-  };
-
   // Handle status change from invoice modal
   const handleStatusChange = async (itemIndex) => {
     if (!order) return;
@@ -117,66 +107,108 @@ const OrderView = () => {
     }
   };
 
+  // Generate PDF with proper page handling
   const generatePDF = async () => {
     if (selectedItems.size === 0) {
       toast.error(t('selectItemsForInvoice'));
       return;
     }
 
+    const loadingToast = toast.loading(t('generatingPDF') || 'Generating PDF...');
+
     try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const element = document.getElementById('invoice-content');
+      if (!element) {
+        throw new Error('Invoice content element not found');
+      }
+      
+      // Temporarily make element visible for capture
+      const originalStyle = {
+        position: element.style.position,
+        left: element.style.left,
+        top: element.style.top,
+        opacity: element.style.opacity,
+        pointerEvents: element.style.pointerEvents,
+        zIndex: element.style.zIndex,
+        transform: element.style.transform,
+        visibility: element.style.visibility
+      };
+      
+      element.style.position = 'fixed';
+      element.style.left = '-10000px';
+      element.style.top = '0px';
+      element.style.opacity = '1';
+      element.style.pointerEvents = 'none';
+      element.style.zIndex = '9999';
+      element.style.transform = 'none';
+      element.style.visibility = 'visible';
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Restore original styles
+      Object.keys(originalStyle).forEach(key => {
+        element.style[key] = originalStyle[key];
       });
       
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
-      const imgWidth = 210;
-      const pageHeight = 295;
+      const imgWidth = 210; // A4 width
+      const pageHeight = 295; // A4 height
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
       
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
+      // Dynamic page generation based on content size
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        let heightLeft = imgHeight;
+        let position = 0;
+        
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
+        
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
       }
       
       const selectedCount = selectedItems.size;
       const totalCount = order.items.length;
+      const timestamp = new Date().toISOString().split('T')[0];
       const filename = selectedCount === totalCount 
-        ? `eslam-order-${user?.name}-${language}-${new Date().toISOString().split('T')[0]}.pdf`
-        : `eslam-order-${user?.name}-selected-${selectedCount}-${language}-${new Date().toISOString().split('T')[0]}.pdf`;
+        ? `eslam-order-${user?.name}-${language}-${timestamp}.pdf`
+        : `eslam-order-${user?.name}-selected-${selectedCount}-${language}-${timestamp}.pdf`;
       
       pdf.save(filename);
+      toast.dismiss(loadingToast);
       toast.success(t('invoiceGeneratedSuccessfully'));
     } catch (error) {
       console.error('Error generating PDF:', error);
+      toast.dismiss(loadingToast);
       toast.error(t('errorGeneratingInvoice'));
     }
   };
 
+  // Modal handlers
   const showDeleteModal = () => {
-    setDeleteModal({
-      isOpen: true,
-      isLoading: false
-    });
+    setDeleteModal({ isOpen: true, isLoading: false });
   };
 
   const closeDeleteModal = () => {
-    setDeleteModal({
-      isOpen: false,
-      isLoading: false
-    });
+    setDeleteModal({ isOpen: false, isLoading: false });
   };
 
   const confirmDeleteOrder = async () => {
@@ -193,10 +225,12 @@ const OrderView = () => {
     }
   };
 
+  // Loading state
   if (loading) {
     return <div className="loading">{t('loading')}</div>;
   }
 
+  // Error state
   if (!order || !user) {
     return (
       <div className="error">
@@ -208,9 +242,29 @@ const OrderView = () => {
     );
   }
 
+  // Table cell styling
+  const tableCellStyle = {
+    border: '1px solid #ddd',
+    padding: '8px',
+    fontSize: '10px',
+    whiteSpace: 'nowrap'
+  };
+
+  const headerCellStyle = {
+    ...tableCellStyle,
+    backgroundColor: '#f8f9fa',
+    textAlign: language === 'ar' ? 'right' : 'left'
+  };
+
+  const dataCellStyle = (textAlign) => ({
+    ...tableCellStyle,
+    textAlign: textAlign || (language === 'ar' ? 'right' : 'left')
+  });
+
   return (
-    <div>
-      <div className="card">
+    <div style={{ overflow: 'hidden' }}>
+      <div className="card" style={{ overflow: 'hidden' }}>
+        {/* Header */}
         <div className="card-header">
           <h1 className="card-title">{t('orderDetails2')}</h1>
           <div className="action-buttons">
@@ -226,15 +280,89 @@ const OrderView = () => {
           </div>
         </div>
 
+        {/* Order Details Display - Always show ALL items */}
+        <div className="card-body" style={{ overflow: 'hidden' }}>
+          <div style={{ marginBottom: '30px' }}>
+            <h3>{t('customerData')}</h3>
+            <p><strong>{t('name')}:</strong> {user.name}</p>
+            <p><strong>{t('orderNumber')}:</strong> #{order.id}</p>
+            <p><strong>{t('creationDate2')}:</strong> {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+          </div>
 
-        {/* Invoice Content for PDF */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3>{t('orderDetails3')}</h3>
+            <div className="table-responsive" style={{ overflowX: 'auto', maxWidth: '100%', margin: '0', padding: '0' }}>
+              <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                <thead>
+                  <tr>
+                    <th style={headerCellStyle}>{t('description')}</th>
+                    <th style={headerCellStyle}>{t('width')}</th>
+                    <th style={headerCellStyle}>{t('length')}</th>
+                    <th style={headerCellStyle}>{t('area')}</th>
+                    <th style={headerCellStyle}>{t('quantity')}</th>
+                    <th style={headerCellStyle}>{t('category')}</th>
+                    <th style={headerCellStyle}>{t('pricePerMeter')}</th>
+                    <th style={headerCellStyle}>{t('total')}</th>
+                    <th style={headerCellStyle}>{t('status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((item, index) => (
+                    <tr key={index}>
+                      <td style={dataCellStyle()}>{item.description || '-'}</td>
+                      <td style={dataCellStyle()}>{item.width} {t('meter')}</td>
+                      <td style={dataCellStyle()}>{item.length} {t('meter')}</td>
+                      <td style={dataCellStyle()}>{item.area.toFixed(2)} {t('squareMeter')}</td>
+                      <td style={dataCellStyle()}>{item.quantity}</td>
+                      <td style={dataCellStyle()}>{item.category || '-'}</td>
+                      <td style={dataCellStyle()}>{item.pricePerMeter.toFixed(2)} {t('currency')}</td>
+                      <td style={{ ...dataCellStyle(), fontWeight: 'bold' }}>{item.total.toFixed(2)} {t('currency')}</td>
+                      <td style={dataCellStyle()}>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${item.status === 'done' ? 'btn-success' : 'btn-warning'}`}
+                          onClick={() => toggleItemStatus(index)}
+                          style={{ fontSize: '12px', padding: '4px 8px' }}
+                        >
+                          {t(item.status)}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+            <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+              {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+            </h2>
+            <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {order.items.length}</p>
+            <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+          </div>
+        </div>
+
+        {/* Hidden Invoice Content for PDF - Only shows selected items */}
         <div 
           id="invoice-content" 
+          key={`invoice-${selectedItems.size}-${Array.from(selectedItems).join('-')}`}
           style={{ 
             backgroundColor: 'white', 
             padding: '20px',
             direction: language === 'ar' ? 'rtl' : 'ltr',
-            textAlign: language === 'ar' ? 'right' : 'left'
+            textAlign: language === 'ar' ? 'right' : 'left',
+            position: 'absolute',
+            left: '-10000px',
+            top: '0px',
+            width: '210mm',
+            minHeight: 'auto',
+            maxHeight: 'none',
+            opacity: '0',
+            pointerEvents: 'none',
+            zIndex: '-1',
+            fontSize: '12px',
+            lineHeight: '1.4'
           }}
         >
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
@@ -253,50 +381,146 @@ const OrderView = () => {
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('orderDetails3')}</h3>
             <div className="table-responsive">
-              <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f8f9fa' }}>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('width')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('length')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('area')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('quantity')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('category')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('pricePerMeter')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('total')}</th>
-                  <th style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('status')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.items.filter((_, index) => selectedItems.has(index)).map((item, index) => (
-                  <tr key={index}>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.width} {t('meter')}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.length} {t('meter')}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.area.toFixed(2)} {t('squareMeter')}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.quantity}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.category || '-'}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {item.pricePerMeter.toFixed(2)} {t('currency')}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left', fontWeight: 'bold' }}>
-                      {item.total.toFixed(2)} {t('currency')}
-                    </td>
-                    <td style={{ border: '1px solid #ddd', padding: '12px', textAlign: language === 'ar' ? 'right' : 'left' }}>
-                      {t(item.status)}
-                    </td>
+              <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', fontSize: '10px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('description')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('width')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('length')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('area')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('quantity')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('category')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('pricePerMeter')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('total')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('status')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {order.items.filter((_, index) => selectedItems.has(index)).map((item, index) => (
+                    <tr key={index}>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3',
+                        maxWidth: '200px'
+                      }}>
+                        {item.description || '-'}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.width} {t('meter')}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.length} {t('meter')}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.area.toFixed(2)} {t('squareMeter')}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.quantity}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.category || '-'}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.pricePerMeter.toFixed(2)} {t('currency')}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        fontWeight: 'bold',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {item.total.toFixed(2)} {t('currency')}
+                      </td>
+                      <td style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '8px', 
+                        textAlign: language === 'ar' ? 'right' : 'left', 
+                        fontSize: '10px',
+                        verticalAlign: 'top',
+                        wordWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.3'
+                      }}>
+                        {t(item.status)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -313,19 +537,22 @@ const OrderView = () => {
             <p>{t('allRightsReserved')}</p>
           </div>
         </div>
-
       </div>
 
       {/* Invoice Selection Modal */}
-      <InvoiceSelectionModal
-        isOpen={invoiceModal}
-        onClose={() => setInvoiceModal(false)}
-        onConfirm={generatePDF}
-        orderItems={order?.items || []}
-        selectedItems={selectedItems}
-        setSelectedItems={setSelectedItems}
-        onStatusChange={handleStatusChange}
-      />
+      {invoiceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, overflow: 'hidden' }}>
+          <InvoiceSelectionModal
+            isOpen={invoiceModal}
+            onClose={() => setInvoiceModal(false)}
+            onConfirm={generatePDF}
+            orderItems={order?.items || []}
+            selectedItems={selectedItems}
+            setSelectedItems={setSelectedItems}
+            onStatusChange={handleStatusChange}
+          />
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal

@@ -18,7 +18,7 @@ const UpdateOrder = () => {
       category: '',
       pricePerMeter: '',
       total: 0,
-      notes: '',
+      description: '',
       status: 'working'
     }
   ]);
@@ -57,7 +57,7 @@ const UpdateOrder = () => {
         category: item.category,
         pricePerMeter: item.pricePerMeter.toString(),
         total: item.total,
-        notes: item.notes || '',
+        description: item.description || '',
         status: item.status || 'working'
       })));
     } catch (error) {
@@ -138,7 +138,7 @@ const UpdateOrder = () => {
         category: '',
         pricePerMeter: '',
         total: 0,
-        notes: '',
+        description: '',
         status: 'working'
       }
     ]);
@@ -202,7 +202,7 @@ const UpdateOrder = () => {
           category: item.category,
           pricePerMeter: parseFloat(item.pricePerMeter),
           total: parseFloat(item.total),
-          notes: item.notes,
+          description: item.description,
           status: item.status || 'working'
         })),
         totalAmount: calculateGrandTotal(),
@@ -270,6 +270,16 @@ const UpdateOrder = () => {
                   {t('deleteItem')}
                 </button>
               )}
+            </div>
+
+            <div className="form-group">
+              <label>{t('description')}</label>
+              <textarea
+                value={item.description}
+                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                placeholder={t('anyAdditionalNotes')}
+                rows="3"
+              />
             </div>
 
             <div className="form-row">
@@ -360,15 +370,6 @@ const UpdateOrder = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>{t('notes')}</label>
-              <textarea
-                value={item.notes}
-                onChange={(e) => handleItemChange(index, 'notes', e.target.value)}
-                placeholder={t('anyAdditionalNotes')}
-                rows="3"
-              />
-            </div>
 
             <div className="form-row">
               <div className="form-group">
