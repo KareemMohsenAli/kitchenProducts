@@ -247,25 +247,46 @@ const OrderView = () => {
     border: '1px solid #ddd',
     padding: '8px',
     fontSize: '10px',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'normal',
+    wordWrap: 'break-word',
+    overflow: 'hidden'
   };
 
   const headerCellStyle = {
     ...tableCellStyle,
     backgroundColor: '#f8f9fa',
-    textAlign: language === 'ar' ? 'right' : 'left'
+    textAlign: language === 'ar' ? 'right' : 'left',
+    fontWeight: 'bold',
+    whiteSpace: 'nowrap'
   };
 
   const dataCellStyle = (textAlign) => ({
     ...tableCellStyle,
-    textAlign: textAlign || (language === 'ar' ? 'right' : 'left')
+    textAlign: textAlign || (language === 'ar' ? 'right' : 'left'),
+    whiteSpace: 'normal',
+    wordWrap: 'break-word'
   });
 
   return (
-    <div style={{ overflow: 'hidden' }}>
-      <div className="card" style={{ overflow: 'hidden' }}>
+    <div style={{ 
+      overflow: 'hidden', 
+      width: '100%', 
+      maxWidth: '100vw',
+      direction: language === 'ar' ? 'rtl' : 'ltr'
+    }}>
+      <div className="card" style={{ 
+        overflow: 'hidden', 
+        width: '100%', 
+        maxWidth: '100%',
+        margin: '0',
+        padding: '0'
+      }}>
         {/* Header */}
-        <div className="card-header">
+        <div className="card-header" style={{ 
+          width: '100%', 
+          maxWidth: '100%',
+          overflow: 'hidden'
+        }}>
           <h1 className="card-title">{t('orderDetails2')}</h1>
           <div className="action-buttons">
             <button className="btn btn-success" onClick={() => setInvoiceModal(true)}>
@@ -281,7 +302,12 @@ const OrderView = () => {
         </div>
 
         {/* Order Details Display - Always show ALL items */}
-        <div className="card-body" style={{ overflow: 'hidden' }}>
+        <div className="card-body" style={{ 
+          overflow: 'hidden', 
+          width: '100%', 
+          maxWidth: '100%',
+          padding: '15px'
+        }}>
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('customerData')}</h3>
             <p><strong>{t('name')}:</strong> {user.name}</p>
@@ -291,56 +317,99 @@ const OrderView = () => {
 
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('orderDetails3')}</h3>
-            <div className="table-responsive" style={{ overflowX: 'auto', maxWidth: '100%', margin: '0', padding: '0' }}>
-              <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                <thead>
-                  <tr>
-                    <th style={headerCellStyle}>{t('description')}</th>
-                    <th style={headerCellStyle}>{t('width')}</th>
-                    <th style={headerCellStyle}>{t('length')}</th>
-                    <th style={headerCellStyle}>{t('area')}</th>
-                    <th style={headerCellStyle}>{t('quantity')}</th>
-                    <th style={headerCellStyle}>{t('category')}</th>
-                    <th style={headerCellStyle}>{t('pricePerMeter')}</th>
-                    <th style={headerCellStyle}>{t('total')}</th>
-                    <th style={headerCellStyle}>{t('status')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item, index) => (
-                    <tr key={index}>
-                      <td style={dataCellStyle()}>{item.description || '-'}</td>
-                      <td style={dataCellStyle()}>{item.width} {t('meter')}</td>
-                      <td style={dataCellStyle()}>{item.length} {t('meter')}</td>
-                      <td style={dataCellStyle()}>{item.area.toFixed(2)} {t('squareMeter')}</td>
-                      <td style={dataCellStyle()}>{item.quantity}</td>
-                      <td style={dataCellStyle()}>{item.category || '-'}</td>
-                      <td style={dataCellStyle()}>{item.pricePerMeter.toFixed(2)} {t('currency')}</td>
-                      <td style={{ ...dataCellStyle(), fontWeight: 'bold' }}>{item.total.toFixed(2)} {t('currency')}</td>
-                      <td style={dataCellStyle()}>
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${item.status === 'done' ? 'btn-success' : 'btn-warning'}`}
-                          onClick={() => toggleItemStatus(index)}
-                          style={{ fontSize: '12px', padding: '4px 8px' }}
-                        >
-                          {t(item.status)}
-                        </button>
-                      </td>
+            <div style={{ 
+              width: '100%', 
+              maxWidth: '100%', 
+              overflow: 'hidden',
+              margin: '0', 
+              padding: '0'
+            }}>
+              <div style={{ 
+                overflowX: 'auto', 
+                width: '100%', 
+                maxWidth: '100%',
+                WebkitOverflowScrolling: 'touch'
+              }}>
+                <table className="invoice-table" style={{ 
+                  width: '100%', 
+                  minWidth: '800px',
+                  borderCollapse: 'collapse', 
+                  marginTop: '10px',
+                  tableLayout: 'fixed'
+                }}>
+                  <thead>
+                    <tr>
+                      <th style={{...headerCellStyle, width: '25%'}}>{t('description')}</th>
+                      <th style={{...headerCellStyle, width: '8%'}}>{t('width')}</th>
+                      <th style={{...headerCellStyle, width: '8%'}}>{t('length')}</th>
+                      <th style={{...headerCellStyle, width: '8%'}}>{t('area')}</th>
+                      <th style={{...headerCellStyle, width: '6%'}}>{t('quantity')}</th>
+                      <th style={{...headerCellStyle, width: '8%'}}>{t('category')}</th>
+                      <th style={{...headerCellStyle, width: '10%'}}>{t('pricePerMeter')}</th>
+                      <th style={{...headerCellStyle, width: '10%'}}>{t('total')}</th>
+                      <th style={{...headerCellStyle, width: '9%'}}>{t('status')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {order.items.map((item, index) => (
+                      <tr key={index}>
+                        <td style={{...dataCellStyle(), wordWrap: 'break-word', whiteSpace: 'normal'}}>
+                          {item.description || '-'}
+                        </td>
+                        <td style={dataCellStyle()}>{item.width} {t('meter')}</td>
+                        <td style={dataCellStyle()}>{item.length} {t('meter')}</td>
+                        <td style={dataCellStyle()}>{item.area.toFixed(2)} {t('squareMeter')}</td>
+                        <td style={dataCellStyle()}>{item.quantity}</td>
+                        <td style={dataCellStyle()}>{item.category || '-'}</td>
+                        <td style={dataCellStyle()}>{item.pricePerMeter.toFixed(2)} {t('currency')}</td>
+                        <td style={{ ...dataCellStyle(), fontWeight: 'bold' }}>{item.total.toFixed(2)} {t('currency')}</td>
+                        <td style={dataCellStyle()}>
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${item.status === 'done' ? 'btn-success' : 'btn-warning'}`}
+                            onClick={() => toggleItemStatus(index)}
+                            style={{ fontSize: '12px', padding: '4px 8px' }}
+                          >
+                            {t(item.status)}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-            <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-              {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-            </h2>
-            <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {order.items.length}</p>
-            <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
-          </div>
+           <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+             {order.advancePayment && order.advancePayment > 0 ? (
+               <>
+                 <div style={{ marginBottom: '15px' }}>
+                   <h3 style={{ color: '#333', marginBottom: '5px' }}>
+                     {t('totalBeforeAdvance')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                   </h3>
+                 </div>
+                 <div style={{ marginBottom: '15px' }}>
+                   <p style={{ margin: '5px 0', color: '#666' }}>
+                     {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
+                   </p>
+                 </div>
+                 <div>
+                   <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                     {t('totalAfterAdvance')}: {(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0)).toFixed(2)} {t('currency')}
+                   </h2>
+                 </div>
+               </>
+             ) : (
+               <div>
+                 <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                   {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                 </h2>
+               </div>
+             )}
+             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {order.items.length}</p>
+             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+           </div>
         </div>
 
         {/* Hidden Invoice Content for PDF - Only shows selected items */}
@@ -384,15 +453,15 @@ const OrderView = () => {
               <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', fontSize: '10px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8f9fa' }}>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('description')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('width')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('length')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('area')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('quantity')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('category')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('pricePerMeter')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('total')}</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top' }}>{t('status')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '25%' }}>{t('description')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '8%' }}>{t('width')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '8%' }}>{t('length')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '8%' }}>{t('area')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '6%' }}>{t('quantity')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '8%' }}>{t('category')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '10%' }}>{t('pricePerMeter')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '10%' }}>{t('total')}</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: language === 'ar' ? 'right' : 'left', fontSize: '10px', verticalAlign: 'top', width: '9%' }}>{t('status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,13 +593,35 @@ const OrderView = () => {
             </div>
           </div>
 
-          <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-            <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-              {t('grandTotal2')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-            </h2>
-            <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {selectedItems.size}</p>
-            <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
-          </div>
+           <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+             {order.advancePayment && order.advancePayment > 0 ? (
+               <>
+                 <div style={{ marginBottom: '15px' }}>
+                   <h3 style={{ color: '#333', marginBottom: '5px' }}>
+                     {t('totalBeforeAdvance')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                   </h3>
+                 </div>
+                 <div style={{ marginBottom: '15px' }}>
+                   <p style={{ margin: '5px 0', color: '#666' }}>
+                     {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
+                   </p>
+                 </div>
+                 <div>
+                   <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                     {t('totalAfterAdvance')}: {((order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0)) * (selectedItems.size / order.items.length)).toFixed(2)} {t('currency')}
+                   </h2>
+                 </div>
+               </>
+             ) : (
+               <div>
+                 <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                   {t('grandTotal2')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                 </h2>
+               </div>
+             )}
+             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {selectedItems.size}</p>
+             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+           </div>
 
           <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#666' }}>
             <p>{t('thankYou')}</p>
@@ -550,6 +641,8 @@ const OrderView = () => {
             selectedItems={selectedItems}
             setSelectedItems={setSelectedItems}
             onStatusChange={handleStatusChange}
+            advancePayment={order?.advancePayment || null}
+            remainingAmount={order?.remainingAmount || null}
           />
         </div>
       )}

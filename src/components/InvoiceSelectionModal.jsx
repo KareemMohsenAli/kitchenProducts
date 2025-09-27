@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import './InvoiceSelectionModal.css';
 
-const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selectedItems, setSelectedItems, onStatusChange }) => {
+const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selectedItems, setSelectedItems, onStatusChange, advancePayment = null, remainingAmount = null }) => {
   const { t, language } = useLanguage();
   const [localSelectedItems, setLocalSelectedItems] = useState(new Set());
 
@@ -131,6 +131,50 @@ const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selecte
               <span>{t('selectedItems')}: {localSelectedItems.size}</span>
               <span>{t('totalAmount')}: <strong>{calculateSelectedTotal().toFixed(2)} {t('currency')}</strong></span>
             </div>
+            {advancePayment !== null && advancePayment !== undefined && parseFloat(advancePayment) > 0 && (
+              <div style={{ 
+                marginTop: '15px', 
+                padding: '15px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '8px', 
+                border: '1px solid #e5e7eb'
+              }}>
+                <h4 style={{ 
+                  margin: '0 0 12px 0', 
+                  fontSize: '16px', 
+                  color: '#374151',
+                  fontWeight: '600'
+                }}>
+                  {t('advancePayment')} {t('details')}
+                </h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>{t('totalBeforeAdvance')}:</span>
+                  <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
+                    {calculateSelectedTotal().toFixed(2)} {t('currency')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', color: '#666' }}>{t('advancePayment')}:</span>
+                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>
+                    -{advancePayment.toFixed(2)} {t('currency')}
+                  </span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  paddingTop: '8px',
+                  borderTop: '1px solid #d1d5db'
+                }}>
+                  <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
+                    {t('totalAfterAdvance')}:
+                  </span>
+                  <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
+                    {((remainingAmount || calculateSelectedTotal()) * (localSelectedItems.size / orderItems.length)).toFixed(2)} {t('currency')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

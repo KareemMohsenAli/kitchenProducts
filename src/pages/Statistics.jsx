@@ -8,6 +8,7 @@ const Statistics = () => {
     ordersCount: 0,
     usersCount: 0,
     totalAmount: 0,
+    totalAdvancePayment: 0,
     averageOrderValue: 0,
     storageUsed: 0,
     storageAvailable: 0,
@@ -33,8 +34,9 @@ const Statistics = () => {
       const users = await db.users.toArray();
       
       // Calculate total amount
-      const totalAmount = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const averageOrderValue = ordersCount > 0 ? totalAmount / ordersCount : 0;
+      const totalAmount = parseFloat(orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2));
+      const totalAdvancePayment = parseFloat(orders.reduce((sum, order) => sum + (order.advancePayment || 0), 0).toFixed(2));
+      const averageOrderValue = ordersCount > 0 ? parseFloat((totalAmount / ordersCount).toFixed(2)) : 0;
       
       // Calculate storage usage
       const ordersSize = JSON.stringify(orders).length;
@@ -89,6 +91,7 @@ const Statistics = () => {
         ordersCount,
         usersCount,
         totalAmount,
+        totalAdvancePayment,
         averageOrderValue,
         storageUsed,
         storageAvailable,
@@ -173,6 +176,16 @@ const Statistics = () => {
               <p>{t('totalRevenue')}</p>
             </div>
           </div>
+          
+          {stats.totalAdvancePayment > 0 && (
+            <div className="stat-card">
+              <div className="stat-icon">💳</div>
+              <div className="stat-content">
+                <h3 style={{ fontSize: '1.2rem', wordBreak: 'break-word' }}>{formatCurrency(stats.totalAdvancePayment)}</h3>
+                <p>{t('advancePayment')}</p>
+              </div>
+            </div>
+          )}
           
           <div className="stat-card">
             <div className="stat-icon">📈</div>

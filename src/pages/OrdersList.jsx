@@ -558,6 +558,41 @@ const OrdersList = () => {
                                   </tbody>
                                 </table>
                               </div>
+                              
+                              {/* Order Summary with Advance Payment */}
+                              <div style={{ 
+                                marginTop: '20px', 
+                                padding: '15px', 
+                                backgroundColor: '#f8f9fa', 
+                                borderRadius: '8px',
+                                border: '1px solid #e5e7eb'
+                              }}>
+                                {order.advancePayment && order.advancePayment > 0 ? (
+                                  <>
+                                    <div style={{ marginBottom: '10px' }}>
+                                      <h4 style={{ margin: '0 0 8px 0', color: '#374151', fontSize: '16px' }}>
+                                        {t('totalBeforeAdvance')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                                      </h4>
+                                    </div>
+                                    <div style={{ marginBottom: '10px' }}>
+                                      <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
+                                        {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <h4 style={{ margin: '0', color: '#007bff', fontSize: '16px', fontWeight: 'bold' }}>
+                                        {t('totalAfterAdvance')}: {(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0) - order.advancePayment).toFixed(2)} {t('currency')}
+                                      </h4>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div>
+                                    <h4 style={{ margin: '0', color: '#374151', fontSize: '16px', fontWeight: 'bold' }}>
+                                      {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
+                                    </h4>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -570,14 +605,6 @@ const OrdersList = () => {
           </div>
         )}
 
-        {/* Summary */}
-        {filteredOrders.length > 0 && (
-          <div className="card" style={{ marginTop: '20px', backgroundColor: '#f8f9fa' }}>
-            <h3>{t('ordersSummary')}</h3>
-            <p>{t('totalOrders')}: {filteredOrders.length}</p>
-            <p>{t('totalAmount2')}: {filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2)} {t('currency')}</p>
-          </div>
-        )}
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -8,6 +8,7 @@ const CreateOrder = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [userName, setUserName] = useState('');
+  const [advancePayment, setAdvancePayment] = useState('');
   const [orderItems, setOrderItems] = useState([
     {
       width: '',
@@ -41,7 +42,7 @@ const CreateOrder = () => {
   const calculateArea = (width, length) => {
     const w = parseFloat(width) || 0;
     const l = parseFloat(length) || 0;
-    return w * l;
+    return parseFloat((w * l).toFixed(2));
   };
 
   // Calculate total for an item
@@ -49,12 +50,19 @@ const CreateOrder = () => {
     const a = parseFloat(area) || 0;
     const q = parseFloat(quantity) || 0;
     const p = parseFloat(pricePerMeter) || 0;
-    return a * q * p;
+    return parseFloat((a * q * p).toFixed(2));
   };
 
   // Calculate grand total
   const calculateGrandTotal = () => {
-    return orderItems.reduce((total, item) => total + item.total, 0);
+    return parseFloat(orderItems.reduce((total, item) => total + item.total, 0).toFixed(2));
+  };
+
+  // Calculate total after advance payment
+  const calculateTotalAfterAdvance = () => {
+    const grandTotal = calculateGrandTotal();
+    const advance = parseFloat(advancePayment) || 0;
+    return parseFloat((grandTotal - advance).toFixed(2));
   };
 
   // Handle input changes
@@ -186,6 +194,8 @@ const CreateOrder = () => {
             status: item.status || 'working'
           })),
           totalAmount: calculateGrandTotal(),
+          advancePayment: parseFloat(advancePayment) || 0,
+          remainingAmount: calculateTotalAfterAdvance(),
           createdAt: new Date(),
           updatedAt: new Date()
         });
@@ -200,6 +210,7 @@ const CreateOrder = () => {
       
       // Reset form
       setUserName('');
+      setAdvancePayment('');
       setOrderItems([{
         width: '',
         length: '',
@@ -243,6 +254,19 @@ const CreateOrder = () => {
             onChange={(e) => setUserName(e.target.value)}
             placeholder={t('enterCustomerName')}
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="advancePayment">{t('advancePayment')} ({t('currency')})</label>
+          <input
+            type="number"
+            id="advancePayment"
+            step="0.01"
+            min="0"
+            value={advancePayment}
+            onChange={(e) => setAdvancePayment(e.target.value)}
+            placeholder={t('enterAdvancePayment')}
           />
         </div>
 
@@ -376,9 +400,31 @@ const CreateOrder = () => {
         </div>
 
         <div className="card" style={{ backgroundColor: '#f8f9fa' }}>
-          <h3 style={{ margin: 0, color: '#333' }}>
-            {t('grandTotal')}: {calculateGrandTotal().toFixed(2)} {t('currency')}
-          </h3>
+          {advancePayment && parseFloat(advancePayment) > 0 ? (
+            <>
+              <div style={{ marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, color: '#333' }}>
+                  {t('totalBeforeAdvance')}: {calculateGrandTotal().toFixed(2)} {t('currency')}
+                </h3>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <p style={{ margin: '5px 0', color: '#666' }}>
+                  {t('advancePayment')}: -{parseFloat(advancePayment).toFixed(2)} {t('currency')}
+                </p>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, color: '#007bff' }}>
+                  {t('totalAfterAdvance')}: {calculateTotalAfterAdvance().toFixed(2)} {t('currency')}
+                </h3>
+              </div>
+            </>
+          ) : (
+            <div>
+              <h3 style={{ margin: 0, color: '#333' }}>
+                {t('grandTotal')}: {calculateGrandTotal().toFixed(2)} {t('currency')}
+              </h3>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: '20px' }}>

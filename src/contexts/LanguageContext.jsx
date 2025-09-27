@@ -13,7 +13,7 @@ export const useLanguage = () => {
 const translations = {
   ar: {
     // Navigation
-    companyName: 'إسلام للألوميتال',
+    companyName: 'العامر للألوميتال',
     createOrder: 'إنشاء طلب جديد',
     viewOrders: 'عرض جميع الطلبات',
     statistics: 'الإحصائيات',
@@ -44,6 +44,12 @@ const translations = {
     anyAdditionalNotes: 'أي ملاحظات إضافية...',
     addNewItem: 'إضافة عنصر جديد',
     grandTotal: 'الإجمالي الكلي',
+    advancePayment: 'دفعة مقدمة',
+    enterAdvancePayment: 'أدخل الدفعة المقدمة',
+    totalBeforeAdvance: 'الإجمالي قبل الدفعة المقدمة',
+    totalAfterAdvance: 'الإجمالي بعد الدفعة المقدمة',
+    remainingAmount: 'المبلغ المتبقي',
+    details: 'التفاصيل',
     saveOrder: 'حفظ الطلب',
     saving: 'جاري الحفظ...',
     viewAllOrders: 'عرض جميع الطلبات',
@@ -92,7 +98,7 @@ const translations = {
     grandTotal2: 'الإجمالي الكلي',
     numberOfItems2: 'عدد العناصر',
     thankYou: 'شكراً لاختياركم خدماتنا',
-    allRightsReserved: 'إسلام للألوميتال - جميع الحقوق محفوظة',
+    allRightsReserved: 'العامر للألوميتال - جميع الحقوق محفوظة',
     
     // Messages
     pleaseEnterCustomerName: 'يرجى إدخال اسم العميل',
@@ -181,7 +187,7 @@ const translations = {
   },
   en: {
     // Navigation
-    companyName: 'Eslam for Aluminum',
+    companyName: 'Al-Amer for Aluminum',
     createOrder: 'Create New Order',
     viewOrders: 'View All Orders',
     statistics: 'Statistics',
@@ -212,6 +218,12 @@ const translations = {
     anyAdditionalNotes: 'Any additional notes...',
     addNewItem: 'Add New Item',
     grandTotal: 'Grand Total',
+    advancePayment: 'Advance Payment',
+    enterAdvancePayment: 'Enter advance payment',
+    totalBeforeAdvance: 'Total Before Advance',
+    totalAfterAdvance: 'Total After Advance',
+    remainingAmount: 'Remaining Amount',
+    details: 'Details',
     saveOrder: 'Save Order',
     saving: 'Saving...',
     viewAllOrders: 'View All Orders',
@@ -260,7 +272,7 @@ const translations = {
     grandTotal2: 'Grand Total',
     numberOfItems2: 'Number of Items',
     thankYou: 'Thank you for choosing our services',
-    allRightsReserved: 'Eslam for Aluminum - All rights reserved',
+    allRightsReserved: 'Al-Amer for Aluminum - All rights reserved',
     
     // Messages
     pleaseEnterCustomerName: 'Please enter customer name',
