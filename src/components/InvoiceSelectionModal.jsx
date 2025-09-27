@@ -5,6 +5,7 @@ import './InvoiceSelectionModal.css';
 const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selectedItems, setSelectedItems, onStatusChange, advancePayments = null, remainingAmount = null }) => {
   const { t, language } = useLanguage();
   const [localSelectedItems, setLocalSelectedItems] = useState(new Set());
+  const [taxFile, setTaxFile] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -41,7 +42,7 @@ const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selecte
 
   const handleConfirm = () => {
     setSelectedItems(localSelectedItems);
-    onConfirm();
+    onConfirm(taxFile);
     onClose();
   };
 
@@ -65,6 +66,33 @@ const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selecte
         </div>
         
         <div className="modal-body">
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label htmlFor="taxFile" style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '500',
+              color: '#374151'
+            }}>
+              {t('taxFile')}
+            </label>
+            <input
+              type="text"
+              id="taxFile"
+              value={taxFile}
+              onChange={(e) => setTaxFile(e.target.value)}
+              placeholder={t('enterTaxFile')}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+            />
+          </div>
+          
           <div className="selection-controls">
             <button className="btn btn-sm btn-secondary" onClick={selectAllItems}>
               {t('selectAll')}
