@@ -108,7 +108,7 @@ const OrderView = () => {
   };
 
   // Generate PDF with proper page handling
-  const generatePDF = async () => {
+  const generatePDF = async (taxFile = '') => {
     if (selectedItems.size === 0) {
       toast.error(t('selectItemsForInvoice'));
       return;
@@ -122,6 +122,21 @@ const OrderView = () => {
       const element = document.getElementById('invoice-content');
       if (!element) {
         throw new Error('Invoice content element not found');
+      }
+
+      // Handle tax file display
+      const taxFileDisplay = element.querySelector('#tax-file-display');
+      const taxFileValue = element.querySelector('#tax-file-value');
+      
+      if (taxFile && taxFile.trim()) {
+        if (taxFileDisplay && taxFileValue) {
+          taxFileValue.textContent = taxFile.trim();
+          taxFileDisplay.style.display = 'block';
+        }
+      } else {
+        if (taxFileDisplay) {
+          taxFileDisplay.style.display = 'none';
+        }
       }
       
       // Temporarily make element visible for capture
@@ -471,6 +486,20 @@ const OrderView = () => {
             <h1 style={{ color: '#007bff', marginBottom: '10px' }}>{t('companyName')}</h1>
             <h2>{t('invoice')}</h2>
             <p><strong>{t('orderDate')}:</strong> <strong>{new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}</strong></p>
+          </div>
+
+          {/* Tax File Display - Top Left */}
+          <div style={{ 
+            position: 'absolute', 
+            top: '20px', 
+            left: language === 'ar' ? '20px' : '20px', 
+            right: language === 'ar' ? 'auto' : 'auto',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: '#333',
+            display: 'none' // Will be shown via JavaScript when taxFile is provided
+          }} id="tax-file-display">
+            <strong>{t('taxFile')}:</strong> <span id="tax-file-value"></span>
           </div>
 
           <div style={{ marginBottom: '30px' }}>
