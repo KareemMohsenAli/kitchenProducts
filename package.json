@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node api.js && vite",
     "build": "vite build",
     "build:portable": "vite build && echo 'Portable build created! Copy the dist folder and run_application files to target machine.'",
     "preview": "vite preview"
