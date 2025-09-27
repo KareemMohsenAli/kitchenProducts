@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import './InvoiceSelectionModal.css';
 
-const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selectedItems, setSelectedItems, onStatusChange, advancePayment = null, remainingAmount = null }) => {
+const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selectedItems, setSelectedItems, onStatusChange, advancePayments = null, remainingAmount = null }) => {
   const { t, language } = useLanguage();
   const [localSelectedItems, setLocalSelectedItems] = useState(new Set());
 
@@ -131,50 +131,77 @@ const InvoiceSelectionModal = ({ isOpen, onClose, onConfirm, orderItems, selecte
               <span>{t('selectedItems')}: {localSelectedItems.size}</span>
               <span>{t('totalAmount')}: <strong>{calculateSelectedTotal().toFixed(2)} {t('currency')}</strong></span>
             </div>
-            {advancePayment !== null && advancePayment !== undefined && parseFloat(advancePayment) > 0 && (
-              <div style={{ 
-                marginTop: '15px', 
-                padding: '15px', 
-                backgroundColor: '#f8f9fa', 
-                borderRadius: '8px', 
-                border: '1px solid #e5e7eb'
-              }}>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  fontSize: '16px', 
-                  color: '#374151',
-                  fontWeight: '600'
-                }}>
-                  {t('advancePayment')} {t('details')}
-                </h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px', color: '#374151' }}>{t('totalBeforeAdvance')}:</span>
-                  <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-                    {calculateSelectedTotal().toFixed(2)} {t('currency')}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px', color: '#666' }}>{t('advancePayment')}:</span>
-                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>
-                    -{advancePayment.toFixed(2)} {t('currency')}
-                  </span>
-                </div>
+            {(() => {
+              // Handle both old and new format
+              const payments = advancePayments && Array.isArray(advancePayments) 
+                ? advancePayments 
+                : [];
+              
+              const hasValidPayments = payments.some(p => p.amount && !isNaN(parseFloat(p.amount)) && parseFloat(p.amount) > 0);
+              
+              if (!hasValidPayments) return null;
+              
+              const getPaymentNumberText = (index) => {
+                const numbers = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+                return numbers[index] || `${index + 1}th`;
+              };
+              
+              const totalAdvanceAmount = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+              
+              return (
                 <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  paddingTop: '8px',
-                  borderTop: '1px solid #d1d5db'
+                  marginTop: '15px', 
+                  padding: '15px', 
+                  backgroundColor: '#f8f9fa', 
+                  borderRadius: '8px', 
+                  border: '1px solid #e5e7eb'
                 }}>
-                  <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
-                    {t('totalAfterAdvance')}:
-                  </span>
-                  <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
-                    {((remainingAmount || calculateSelectedTotal()) * (localSelectedItems.size / orderItems.length)).toFixed(2)} {t('currency')}
-                  </span>
+                  <h4 style={{ 
+                    margin: '0 0 12px 0', 
+                    fontSize: '16px', 
+                    color: '#374151',
+                    fontWeight: '600'
+                  }}>
+                    {t('advancePayment')} {t('details')}
+                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '14px', color: '#374151' }}>{t('grandTotal2')}:</span>
+                    <span style={{ fontSize: '14px', color: '#374151', fontWeight: 'bold' }}>
+                      <strong>{calculateSelectedTotal().toFixed(2)} {t('currency')}</strong>
+                    </span>
+                  </div>
+                  
+                  {payments.map((payment, index) => (
+                    payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0 && (
+                      <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '14px', color: '#666' }}>
+                          {t(`${getPaymentNumberText(index)}AdvancePayment`)}:
+                          {payment.date && <span style={{ fontSize: '0.9em', marginLeft: '10px' }}>({payment.date})</span>}
+                        </span>
+                        <span style={{ fontSize: '14px', color: '#666', fontWeight: 'bold' }}>
+                          <strong>-{parseFloat(payment.amount).toFixed(2)} {t('currency')}</strong>
+                        </span>
+                      </div>
+                    )
+                  ))}
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    paddingTop: '8px',
+                    borderTop: '1px solid #d1d5db'
+                  }}>
+                    <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
+                      {t('residualAmount')}:
+                    </span>
+                    <span style={{ fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>
+                      <strong>{((remainingAmount || calculateSelectedTotal() - totalAdvanceAmount) * (localSelectedItems.size / orderItems.length)).toFixed(2)} {t('currency')}</strong>
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
         

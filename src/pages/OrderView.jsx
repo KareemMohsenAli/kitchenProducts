@@ -188,9 +188,7 @@ const OrderView = () => {
       const selectedCount = selectedItems.size;
       const totalCount = order.items.length;
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = selectedCount === totalCount 
-        ? `eslam-order-${user?.name}-${language}-${timestamp}.pdf`
-        : `eslam-order-${user?.name}-selected-${selectedCount}-${language}-${timestamp}.pdf`;
+      const filename = `${user?.name}-${timestamp}.pdf`;
       
       pdf.save(filename);
       toast.dismiss(loadingToast);
@@ -382,33 +380,68 @@ const OrderView = () => {
           </div>
 
            <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-             {order.advancePayment && order.advancePayment > 0 ? (
-               <>
-                 <div style={{ marginBottom: '15px' }}>
-                   <h3 style={{ color: '#333', marginBottom: '5px' }}>
-                     {t('totalBeforeAdvance')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                   </h3>
-                 </div>
-                 <div style={{ marginBottom: '15px' }}>
-                   <p style={{ margin: '5px 0', color: '#666' }}>
-                     {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
-                   </p>
-                 </div>
-                 <div>
-                   <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-                     {t('totalAfterAdvance')}: {(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0)).toFixed(2)} {t('currency')}
-                   </h2>
-                 </div>
-               </>
-             ) : (
-               <div>
-                 <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-                   {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                 </h2>
+             <div style={{ marginBottom: '15px' }}>
+               <h3 style={{ color: '#333', marginBottom: '5px' }}>
+                 {t('grandTotal2')}: <strong>{order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}</strong>
+               </h3>
+             </div>
+             
+             {order.address && (
+               <div style={{ marginBottom: '15px' }}>
+                 <p style={{ margin: '5px 0', color: '#666' }}>
+                   <strong>{t('address')}:</strong> {order.address}
+                 </p>
                </div>
              )}
-             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {order.items.length}</p>
-             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+             
+             {(() => {
+               // Handle both old and new format
+               const payments = order.advancePayments && Array.isArray(order.advancePayments) 
+                 ? order.advancePayments 
+                 : [
+                     ...(order.firstAdvancePayment && parseFloat(order.firstAdvancePayment) > 0 ? [{
+                       amount: order.firstAdvancePayment,
+                       date: order.firstAdvanceDate
+                     }] : []),
+                     ...(order.secondAdvancePayment && parseFloat(order.secondAdvancePayment) > 0 ? [{
+                       amount: order.secondAdvancePayment,
+                       date: order.secondAdvanceDate
+                     }] : [])
+                   ];
+               
+               const hasValidPayments = payments.some(p => p.amount && !isNaN(parseFloat(p.amount)) && parseFloat(p.amount) > 0);
+               
+               if (!hasValidPayments) return null;
+               
+               const getPaymentNumberText = (index) => {
+                 const numbers = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+                 return numbers[index] || `${index + 1}th`;
+               };
+               
+               return (
+                 <>
+                   {payments.map((payment, index) => (
+                     payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0 && (
+                       <div key={index} style={{ marginBottom: '10px' }}>
+                         <p style={{ margin: '5px 0', color: '#666' }}>
+                           {t(`${getPaymentNumberText(index)}AdvancePayment`)}: <strong>-{parseFloat(payment.amount).toFixed(2)} {t('currency')}</strong>
+                           {payment.date && <span style={{ fontSize: '0.9em', marginLeft: '10px' }}>({payment.date})</span>}
+                         </p>
+                       </div>
+                     )
+                   ))}
+                   
+                   <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', marginTop: '10px' }}>
+                     <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                       {t('residualAmount')}: <strong>{(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0) - payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toFixed(2)} {t('currency')}</strong>
+                     </h2>
+                   </div>
+                 </>
+               );
+             })()}
+             
+             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: <strong>{order.items.length}</strong></p>
+             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: <strong>{new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</strong></p>
            </div>
         </div>
 
@@ -437,14 +470,15 @@ const OrderView = () => {
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ color: '#007bff', marginBottom: '10px' }}>{t('companyName')}</h1>
             <h2>{t('invoice')}</h2>
-            <p>{t('orderDate')}: {new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+            <p><strong>{t('orderDate')}:</strong> <strong>{new Date(order.createdAt).toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US')}</strong></p>
           </div>
 
           <div style={{ marginBottom: '30px' }}>
             <h3>{t('customerData')}</h3>
-            <p><strong>{t('name')}:</strong> {user.name}</p>
-            <p><strong>{t('orderNumber')}:</strong> #{order.id}</p>
-            <p><strong>{t('creationDate2')}:</strong> {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+            <p><strong>{t('name')}:</strong> <strong>{user.name}</strong></p>
+            <p><strong>{t('orderNumber')}:</strong> <strong>#{order.id}</strong></p>
+            {order.address && <p><strong>{t('address')}:</strong> <strong>{order.address}</strong></p>}
+            <p><strong>{t('creationDate2')}:</strong> <strong>{new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</strong></p>
           </div>
 
           <div style={{ marginBottom: '30px' }}>
@@ -490,9 +524,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.width} {t('meter')}
+                        <strong>{item.width} {t('meter')}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -503,9 +538,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.length} {t('meter')}
+                        <strong>{item.length} {t('meter')}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -516,9 +552,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.area.toFixed(2)} {t('squareMeter')}
+                        <strong>{item.area.toFixed(2)} {t('squareMeter')}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -529,9 +566,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.quantity}
+                        <strong>{item.quantity}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -542,9 +580,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.category || '-'}
+                        <strong>{item.category || '-'}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -555,9 +594,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {item.pricePerMeter.toFixed(2)} {t('currency')}
+                        <strong>{item.pricePerMeter.toFixed(2)} {t('currency')}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -571,7 +611,7 @@ const OrderView = () => {
                         whiteSpace: 'normal',
                         lineHeight: '1.3'
                       }}>
-                        {item.total.toFixed(2)} {t('currency')}
+                        <strong>{item.total.toFixed(2)} {t('currency')}</strong>
                       </td>
                       <td style={{ 
                         border: '1px solid #ddd', 
@@ -582,9 +622,10 @@ const OrderView = () => {
                         wordWrap: 'break-word',
                         wordBreak: 'break-word',
                         whiteSpace: 'normal',
-                        lineHeight: '1.3'
+                        lineHeight: '1.3',
+                        fontWeight: 'bold'
                       }}>
-                        {t(item.status)}
+                        <strong>{t(item.status)}</strong>
                       </td>
                     </tr>
                   ))}
@@ -594,33 +635,60 @@ const OrderView = () => {
           </div>
 
            <div style={{ textAlign: language === 'ar' ? 'right' : 'left', marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-             {order.advancePayment && order.advancePayment > 0 ? (
-               <>
-                 <div style={{ marginBottom: '15px' }}>
-                   <h3 style={{ color: '#333', marginBottom: '5px' }}>
-                     {t('totalBeforeAdvance')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                   </h3>
-                 </div>
-                 <div style={{ marginBottom: '15px' }}>
-                   <p style={{ margin: '5px 0', color: '#666' }}>
-                     {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
-                   </p>
-                 </div>
-                 <div>
-                   <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-                     {t('totalAfterAdvance')}: {((order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0)) * (selectedItems.size / order.items.length)).toFixed(2)} {t('currency')}
-                   </h2>
-                 </div>
-               </>
-             ) : (
-               <div>
-                 <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
-                   {t('grandTotal2')}: {order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                 </h2>
-               </div>
-             )}
-             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: {selectedItems.size}</p>
-             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: {new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</p>
+             <div style={{ marginBottom: '15px' }}>
+               <h3 style={{ color: '#333', marginBottom: '5px' }}>
+                 {t('grandTotal2')}: <strong style={{ fontSize: '20px', fontWeight: 'bold' }}>{order.items.filter((_, index) => selectedItems.has(index)).reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}</strong>
+               </h3>
+             </div>
+             
+             {(() => {
+               // Handle both old and new format
+               const payments = order.advancePayments && Array.isArray(order.advancePayments) 
+                 ? order.advancePayments 
+                 : [
+                     ...(order.firstAdvancePayment && parseFloat(order.firstAdvancePayment) > 0 ? [{
+                       amount: order.firstAdvancePayment,
+                       date: order.firstAdvanceDate
+                     }] : []),
+                     ...(order.secondAdvancePayment && parseFloat(order.secondAdvancePayment) > 0 ? [{
+                       amount: order.secondAdvancePayment,
+                       date: order.secondAdvanceDate
+                     }] : [])
+                   ];
+               
+               const hasValidPayments = payments.some(p => p.amount && !isNaN(parseFloat(p.amount)) && parseFloat(p.amount) > 0);
+               
+               if (!hasValidPayments) return null;
+               
+               const getPaymentNumberText = (index) => {
+                 const numbers = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+                 return numbers[index] || `${index + 1}th`;
+               };
+               
+               return (
+                 <>
+                   {payments.map((payment, index) => (
+                     payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0 && (
+                       <div key={index} style={{ marginBottom: '10px' }}>
+                         <p style={{ margin: '5px 0', color: '#666' }}>
+                           {t(`${getPaymentNumberText(index)}AdvancePayment`)}: <strong style={{ fontSize: '18px', fontWeight: 'bold' }}>-{parseFloat(payment.amount).toFixed(2)} {t('currency')}</strong>
+                           {payment.date && <span style={{ fontSize: '0.9em', marginLeft: '10px' }}>({payment.date})</span>}
+                         </p>
+                       </div>
+                     )
+                   ))}
+                   
+                   <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', marginTop: '10px' }}>
+                     <h2 style={{ color: '#007bff', marginBottom: '10px' }}>
+                       {t('residualAmount')}: <strong style={{ fontSize: '20px', fontWeight: 'bold' }}>{((order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0) - payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)) * (selectedItems.size / order.items.length)).toFixed(2)} {t('currency')}</strong>
+                     </h2>
+                   </div>
+                 </>
+               );
+             })()}
+             
+             <p style={{ margin: '5px 0' }}>{t('numberOfItems2')}: <strong>{selectedItems.size}</strong></p>
+             <p style={{ margin: '5px 0' }}>{t('creationDate2')}: <strong>{new Date(order.createdAt).toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US')}</strong></p>
            </div>
 
           <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#666' }}>
@@ -641,7 +709,7 @@ const OrderView = () => {
             selectedItems={selectedItems}
             setSelectedItems={setSelectedItems}
             onStatusChange={handleStatusChange}
-            advancePayment={order?.advancePayment || null}
+            advancePayments={order?.advancePayments || null}
             remainingAmount={order?.remainingAmount || null}
           />
         </div>

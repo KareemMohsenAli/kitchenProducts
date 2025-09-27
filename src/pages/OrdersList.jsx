@@ -567,31 +567,65 @@ const OrdersList = () => {
                                 borderRadius: '8px',
                                 border: '1px solid #e5e7eb'
                               }}>
-                                {order.advancePayment && order.advancePayment > 0 ? (
-                                  <>
-                                    <div style={{ marginBottom: '10px' }}>
-                                      <h4 style={{ margin: '0 0 8px 0', color: '#374151', fontSize: '16px' }}>
-                                        {t('totalBeforeAdvance')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                                      </h4>
-                                    </div>
-                                    <div style={{ marginBottom: '10px' }}>
-                                      <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
-                                        {t('advancePayment')}: -{order.advancePayment.toFixed(2)} {t('currency')}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <h4 style={{ margin: '0', color: '#007bff', fontSize: '16px', fontWeight: 'bold' }}>
-                                        {t('totalAfterAdvance')}: {(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0) - order.advancePayment).toFixed(2)} {t('currency')}
-                                      </h4>
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div>
-                                    <h4 style={{ margin: '0', color: '#374151', fontSize: '16px', fontWeight: 'bold' }}>
-                                      {t('grandTotal2')}: {order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}
-                                    </h4>
+                                <div style={{ marginBottom: '10px' }}>
+                                  <h4 style={{ margin: '0 0 8px 0', color: '#374151', fontSize: '16px' }}>
+                                    {t('grandTotal2')}: <strong>{order.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)} {t('currency')}</strong>
+                                  </h4>
+                                </div>
+                                
+                                {order.address && (
+                                  <div style={{ marginBottom: '10px' }}>
+                                    <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
+                                      <strong>{t('address')}:</strong> {order.address}
+                                    </p>
                                   </div>
                                 )}
+                                
+                                {(() => {
+                                  // Handle both old and new format
+                                  const payments = order.advancePayments && Array.isArray(order.advancePayments) 
+                                    ? order.advancePayments 
+                                    : [
+                                        ...(order.firstAdvancePayment && parseFloat(order.firstAdvancePayment) > 0 ? [{
+                                          amount: order.firstAdvancePayment,
+                                          date: order.firstAdvanceDate
+                                        }] : []),
+                                        ...(order.secondAdvancePayment && parseFloat(order.secondAdvancePayment) > 0 ? [{
+                                          amount: order.secondAdvancePayment,
+                                          date: order.secondAdvanceDate
+                                        }] : [])
+                                      ];
+                                  
+                                  const hasValidPayments = payments.some(p => p.amount && !isNaN(parseFloat(p.amount)) && parseFloat(p.amount) > 0);
+                                  
+                                  if (!hasValidPayments) return null;
+                                  
+                                  const getPaymentNumberText = (index) => {
+                                    const numbers = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+                                    return numbers[index] || `${index + 1}th`;
+                                  };
+                                  
+                                  return (
+                                    <>
+                                      {payments.map((payment, index) => (
+                                        payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0 && (
+                                          <div key={index} style={{ marginBottom: '8px' }}>
+                                            <p style={{ margin: '5px 0', color: '#666', fontSize: '14px' }}>
+                                              {t(`${getPaymentNumberText(index)}AdvancePayment`)}: <strong>-{parseFloat(payment.amount).toFixed(2)} {t('currency')}</strong>
+                                              {payment.date && <span style={{ fontSize: '0.9em', marginLeft: '10px' }}>({payment.date})</span>}
+                                            </p>
+                                          </div>
+                                        )
+                                      ))}
+                                      
+                                      <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', marginTop: '10px' }}>
+                                        <h4 style={{ margin: '0', color: '#007bff', fontSize: '16px', fontWeight: 'bold' }}>
+                                          {t('residualAmount')}: <strong>{(order.remainingAmount || order.items.reduce((sum, item) => sum + item.total, 0) - payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toFixed(2)} {t('currency')}</strong>
+                                        </h4>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </td>

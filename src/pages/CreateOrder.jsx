@@ -8,7 +8,10 @@ const CreateOrder = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [userName, setUserName] = useState('');
-  const [advancePayment, setAdvancePayment] = useState('');
+  const [address, setAddress] = useState('');
+  const [advancePayments, setAdvancePayments] = useState([
+    { amount: '', date: '' }
+  ]);
   const [orderItems, setOrderItems] = useState([
     {
       width: '',
@@ -58,11 +61,47 @@ const CreateOrder = () => {
     return parseFloat(orderItems.reduce((total, item) => total + item.total, 0).toFixed(2));
   };
 
-  // Calculate total after advance payment
+  // Calculate total advance payments
+  const calculateTotalAdvancePayments = () => {
+    const total = advancePayments
+      .filter(payment => payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0)
+      .reduce((sum, payment) => {
+        return sum + parseFloat(payment.amount);
+      }, 0);
+    return parseFloat(total.toFixed(2));
+  };
+
+  // Calculate total after advance payments
   const calculateTotalAfterAdvance = () => {
     const grandTotal = calculateGrandTotal();
-    const advance = parseFloat(advancePayment) || 0;
-    return parseFloat((grandTotal - advance).toFixed(2));
+    const totalAdvance = calculateTotalAdvancePayments();
+    return parseFloat((grandTotal - totalAdvance).toFixed(2));
+  };
+
+  // Add new advance payment
+  const addAdvancePayment = () => {
+    setAdvancePayments([...advancePayments, { amount: '', date: '' }]);
+  };
+
+  // Remove advance payment
+  const removeAdvancePayment = (index) => {
+    if (advancePayments.length > 1) {
+      const newPayments = advancePayments.filter((_, i) => i !== index);
+      setAdvancePayments(newPayments);
+    }
+  };
+
+  // Update advance payment
+  const updateAdvancePayment = (index, field, value) => {
+    const newPayments = [...advancePayments];
+    newPayments[index][field] = value;
+    setAdvancePayments(newPayments);
+  };
+
+  // Get payment number text
+  const getPaymentNumberText = (index) => {
+    const numbers = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+    return numbers[index] || `${index + 1}th`;
   };
 
   // Handle input changes
@@ -194,7 +233,14 @@ const CreateOrder = () => {
             status: item.status || 'working'
           })),
           totalAmount: calculateGrandTotal(),
-          advancePayment: parseFloat(advancePayment) || 0,
+          address: address.trim(),
+          advancePayments: advancePayments
+            .filter(payment => payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0)
+            .map(payment => ({
+              amount: parseFloat(payment.amount),
+              date: payment.date || null
+            })),
+          totalAdvancePayments: calculateTotalAdvancePayments(),
           remainingAmount: calculateTotalAfterAdvance(),
           createdAt: new Date(),
           updatedAt: new Date()
@@ -209,8 +255,9 @@ const CreateOrder = () => {
       }, 1000);
       
       // Reset form
-      setUserName('');
-      setAdvancePayment('');
+    setUserName('');
+    setAddress('');
+    setAdvancePayments([{ amount: '', date: '' }]);
       setOrderItems([{
         width: '',
         length: '',
@@ -258,16 +305,75 @@ const CreateOrder = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="advancePayment">{t('advancePayment')} ({t('currency')})</label>
-          <input
-            type="number"
-            id="advancePayment"
-            step="0.01"
-            min="0"
-            value={advancePayment}
-            onChange={(e) => setAdvancePayment(e.target.value)}
-            placeholder={t('enterAdvancePayment')}
+          <label htmlFor="address">{t('address')}</label>
+          <textarea
+            id="address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder={t('enterAddress')}
+            rows="3"
           />
+        </div>
+
+        <div className="form-group">
+          <label>{t('advancePayment')} {t('details')}</label>
+          {advancePayments.map((payment, index) => (
+            <div key={index} style={{ 
+              border: '1px solid #ddd', 
+              borderRadius: '8px', 
+              padding: '15px', 
+              marginBottom: '15px',
+              backgroundColor: '#f9f9f9'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h4 style={{ margin: 0, color: '#333' }}>
+                  {t(`${getPaymentNumberText(index)}AdvancePayment`)}
+                </h4>
+                {advancePayments.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeAdvancePayment(index)}
+                    className="btn btn-danger btn-sm"
+                    style={{ fontSize: '12px', padding: '4px 8px' }}
+                  >
+                    {t('removeAdvancePayment')}
+                  </button>
+                )}
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>{t(`${getPaymentNumberText(index)}AdvancePayment`)} ({t('currency')})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={payment.amount}
+                    onChange={(e) => updateAdvancePayment(index, 'amount', e.target.value)}
+                    placeholder={t(`enter${getPaymentNumberText(index).charAt(0).toUpperCase() + getPaymentNumberText(index).slice(1)}AdvancePayment`)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>{t(`${getPaymentNumberText(index)}AdvanceDate`)}</label>
+                  <input
+                    type="date"
+                    value={payment.date}
+                    onChange={(e) => updateAdvancePayment(index, 'date', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          <button
+            type="button"
+            onClick={addAdvancePayment}
+            className="btn btn-outline-primary"
+            style={{ marginBottom: '20px' }}
+          >
+            {t('addAdvancePayment')}
+          </button>
         </div>
 
         <h3 style={{ marginBottom: '20px', color: '#333' }}>{t('orderDetails')}</h3>
@@ -400,30 +506,31 @@ const CreateOrder = () => {
         </div>
 
         <div className="card" style={{ backgroundColor: '#f8f9fa' }}>
-          {advancePayment && parseFloat(advancePayment) > 0 ? (
+          <div style={{ marginBottom: '10px' }}>
+            <h3 style={{ margin: 0, color: '#333' }}>
+              {t('grandTotal')}: <strong>{calculateGrandTotal().toFixed(2)} {t('currency')}</strong>
+            </h3>
+          </div>
+          
+          {calculateTotalAdvancePayments() > 0 && (
             <>
-              <div style={{ marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: '#333' }}>
-                  {t('totalBeforeAdvance')}: {calculateGrandTotal().toFixed(2)} {t('currency')}
-                </h3>
-              </div>
-              <div style={{ marginBottom: '10px' }}>
-                <p style={{ margin: '5px 0', color: '#666' }}>
-                  {t('advancePayment')}: -{parseFloat(advancePayment).toFixed(2)} {t('currency')}
-                </p>
-              </div>
-              <div>
+              {advancePayments.map((payment, index) => (
+                payment.amount && !isNaN(parseFloat(payment.amount)) && parseFloat(payment.amount) > 0 && (
+                  <div key={index} style={{ marginBottom: '8px' }}>
+                    <p style={{ margin: '5px 0', color: '#666' }}>
+                      {t(`${getPaymentNumberText(index)}AdvancePayment`)}: <strong>-{parseFloat(payment.amount).toFixed(2)} {t('currency')}</strong>
+                      {payment.date && <span style={{ fontSize: '0.9em', marginLeft: '10px' }}>({payment.date})</span>}
+                    </p>
+                  </div>
+                )
+              ))}
+              
+              <div style={{ borderTop: '1px solid #ddd', paddingTop: '10px', marginTop: '10px' }}>
                 <h3 style={{ margin: 0, color: '#007bff' }}>
-                  {t('totalAfterAdvance')}: {calculateTotalAfterAdvance().toFixed(2)} {t('currency')}
+                  {t('residualAmount')}: <strong>{calculateTotalAfterAdvance().toFixed(2)} {t('currency')}</strong>
                 </h3>
               </div>
             </>
-          ) : (
-            <div>
-              <h3 style={{ margin: 0, color: '#333' }}>
-                {t('grandTotal')}: {calculateGrandTotal().toFixed(2)} {t('currency')}
-              </h3>
-            </div>
           )}
         </div>
 
