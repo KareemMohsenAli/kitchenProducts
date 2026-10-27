@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node init && vite",
-    "build": "node init && vite build",
-    "build:portable": "node init && vite build && echo 'Portable build created! Copy the dist folder and run_application files to target machine.'",
+    "dev": "vite",
+    "build": "vite build",
+    "build:portable": "vite build && echo 'Portable build created! Copy the dist folder and run_application files to target machine.'",
     "preview": "vite preview"
   },
   "dependencies": {
